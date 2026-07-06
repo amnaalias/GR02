@@ -389,8 +389,20 @@ $members = getStudentsWithDocuments($group);
                     <?php 
                     $langs = [];
                     foreach ($members as $m) {
-                        if (isset($m['language']) && !empty($m['language'])) {
-                            $langs[] = $m['language'];
+                        $lang = isset($m['language']) && !empty($m['language']) ? $m['language'] : '';
+                        
+                        // Fallback keywords detection matching image_c3a098.png
+                        if (empty($lang) && !empty($m['docStu'])) {
+                            $filename = strtolower(basename($m['docStu']));
+                            if (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
+                                $lang = 'English';
+                            } elseif (strpos($filename, 'syair') !== false || strpos($filename, 'lagu') !== false) {
+                                $lang = 'Malay';
+                            }
+                        }
+                        
+                        if (!empty($lang)) {
+                            $langs[] = $lang;
                         }
                     }
                     echo count(array_unique($langs));
@@ -459,14 +471,26 @@ $members = getStudentsWithDocuments($group);
                     <?php endif; ?>
                     
                     <div class="doc-details">
-                        <div class="detail-item">
-                            <div class="label">Language</div>
-                            <div class="value">
-                                <span class="badge badge-language">
-                                    <i class="fas fa-language"></i> <?php echo isset($member['language']) ? htmlspecialchars($member['language']) : 'N/A'; ?>
-                                </span>
-                            </div>
+                        <div class="label">Language</div>
+                        <div class="value">
+                            <?php 
+                            // Determine language from database or fallback to filename keywords
+                            $display_lang = isset($member['language']) && !empty($member['language']) ? $member['language'] : 'N/A';
+                            
+                            if ($display_lang === 'N/A' && !empty($member['docStu'])) {
+                                $filename = strtolower(basename($member['docStu']));
+                                if (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
+                                    $display_lang = 'English';
+                                } elseif (strpos($filename, 'syair') !== false || strpos($filename, 'lagu') !== false) {
+                                    $display_lang = 'Malay';
+                                }
+                            }
+                            ?>
+                            <span class="badge badge-language">
+                                <i class="fas fa-language"></i> <?php echo htmlspecialchars($display_lang); ?>
+                            </span>
                         </div>
+                    </div>
                         <div class="detail-item">
                             <div class="label">Document Type</div>
                             <div class="value"><?php echo isset($member['document_type']) ? htmlspecialchars($member['document_type']) : 'N/A'; ?></div>
@@ -520,10 +544,7 @@ $members = getStudentsWithDocuments($group);
         }
     });
     
-    <script>
-    // ... your other sidebar scripts remain the same ...
-
-    // Updated analyzeDocument function
+    
     function analyzeDocument(event, matricNo, docPath) {
         // Use event.currentTarget to reliably get the button that was clicked
         const button = event.currentTarget; 
