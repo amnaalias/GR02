@@ -10,15 +10,19 @@ if (empty($matric_no) || empty($photo_path)) {
     exit;
 }
 
-// Simulate photo analysis
-// In production, you would use AI/ML services like Google Vision API, AWS Rekognition, etc.
-$is_formal = rand(0, 1) ? 1 : 0;
-$has_glasses = rand(0, 1) ? 1 : 0;
-$has_smile = rand(0, 1) ? 1 : 0;
-$face_count = rand(1, 3);
-$quality_score = rand(60, 95) / 100;
+// Clean up the photo path before saving to the database if it contains the full server URL prefix
+if (strpos($photo_path, 'uploads/') !== false) {
+    $photo_path = 'uploads/' . explode('uploads/', $photo_path)[1];
+}
 
-// Save to your database (gr02)
+// Simulate photo analysis values
+$is_formal = (rand(1, 100) > 40) ? 1 : 0; // 60% chance formal
+$has_glasses = (rand(1, 100) > 70) ? 1 : 0; // 30% chance glasses
+$has_smile = (rand(1, 100) > 50) ? 1 : 0; // 50% chance smile
+$face_count = 1;
+$quality_score = rand(75, 98); // Whole number quality percentage score
+
+// Save to your group database (gr02)
 $result = savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score);
 
 if ($result) {
@@ -34,6 +38,6 @@ if ($result) {
         ]
     ]);
 } else {
-    echo json_encode(['success' => false, 'message' => 'Failed to save analysis']);
+    echo json_encode(['success' => false, 'message' => 'Failed to write record to gr02 database']);
 }
 ?>
