@@ -365,4 +365,39 @@ function saveDocumentAnalysis($matric_no, $document_path, $language, $word_count
         return false;
     }
 }
+
+/**
+ * Extracts plain text from a .docx file
+ */
+function extractTextFromDocx($filePath) {
+    if (!file_exists($filePath)) return '';
+    $striped_content = '';
+    $zip = new ZipArchive();
+    if ($zip->open($filePath) === true) {
+        if (($index = $zip->locateName('word/document.xml')) !== false) {
+            $data = $zip->getFromIndex($index);
+            $striped_content = strip_tags($data);
+        }
+        $zip->close();
+    }
+    return $striped_content;
+}
+
+/**
+ * Extracts plain text from a simple text-based .pdf file
+ * Note: For advanced/scanned PDFs, tools like pdftotext or an OCR API are required.
+ */
+function extractTextFromPdf($filePath) {
+    if (!file_exists($filePath)) return '';
+    $content = file_get_contents($filePath);
+    // Basic regex pattern to extract printable text strings from PDF objects
+    if (preg_match_all("/\((.*?)\)\s*TJ/s", $content, $matches)) {
+        return implode(' ', $matches[1]);
+    }
+    // Secondary basic PDF fallback parser
+    if (preg_match_all("/\[\((.*?)\)\]\s*TJ/s", $content, $matches)) {
+        return implode(' ', $matches[1]);
+    }
+    return strip_tags($content); // Ultimate crude fallback
+}
 ?>
