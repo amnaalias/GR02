@@ -531,7 +531,7 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
 
     <div class="action-bar">
         <a href="index.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-primary">
-            <i class="fas fa-users"></i> BACK TO MAIN DASHBOARD
+            <i class="fas fa-users"></i> BACK TO MAIN DASHBOARDDDDDDDDDDDDDDD
         </a>
         <a href="cbr.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-warning">
             <i class="fas fa-image"></i> CBR
