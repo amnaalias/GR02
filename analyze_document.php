@@ -10,16 +10,30 @@ if (empty($matric_no) || empty($doc_path)) {
     exit;
 }
 
-// Simulate document language detection
-// In production, you would use libraries like Tesseract OCR, Google Cloud Document AI, etc.
-$languages = ['English', 'Malay', 'Chinese', 'Arabic', 'Spanish', 'French'];
-$language = $languages[array_rand($languages)];
+// 1. DYNAMIC LANGUAGE DETECTION BASED ON FILE PATH / NAME
+// Standardizing to lower-case for keyword matching (e.g., 'poem', 'syair', 'lagu', 'lab')
+$filename = strtolower(basename($doc_path));
+$language = 'English'; // Default fallback language
+
+if (strpos($filename, 'syair') !== false || strpos($filename, 'lagu') !== false) {
+    $language = 'Malay';
+} elseif (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
+    $language = 'English';
+} else {
+    // Optional random pool if it matches none of the standard image signatures
+    $fallback_languages = ['English', 'Malay', 'Chinese', 'Arabic'];
+    $language = $fallback_languages[array_rand($fallback_languages)];
+}
+
+// 2. SIMULATE REMAINING METADATA
 $word_count = rand(500, 5000);
 $page_count = rand(1, 20);
-$document_types = ['PDF', 'Text', 'Report', 'Essay', 'Research', 'Thesis'];
-$document_type = $document_types[array_rand($document_types)];
 
-// Save to your database (gr02)
+// Detect format or fallback to a standard document classification
+$ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+$document_type = ($ext === 'docx' || $ext === 'doc') ? 'Word Document' : 'PDF';
+
+// 3. SAVE ANALYSIS RESULT TO THE DATABASE
 $result = saveDocumentAnalysis($matric_no, $doc_path, $language, $word_count, $page_count, $document_type);
 
 if ($result) {
