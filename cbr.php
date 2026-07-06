@@ -442,46 +442,66 @@ $members = getStudentsWithPhotos($group);
     <?php else: ?>
         <div class="photo-grid">
             <?php foreach ($members as $member): ?>
-    <?php
-    $photoPath = $member['photoStu'] ?? '';
+            <?php
+            $photoPath = $member['photoStu'] ?? '';
 
-    if (!empty($photoPath)) {
-        $photoUrl = '/2026/all/GroupMDB/GR02/GR02/' . ltrim($photoPath, '/');
-    } else {
-        $photoUrl = '';
-    }
-    ?>
+            if (!empty($photoPath)) {
+                // Dynamically build target directory depending on group parameter instead of hardcoding GR02
+                $photoUrl = '/2026/all/GroupMDB/' . urlencode($group) . '/' . urlencode($group) . '/' . ltrim($photoPath, '/');
+            } else {
+                $photoUrl = '';
+            }
+            ?>
 
-    <div class="photo-card">
-        <div class="photo-image">
-            <?php if (!empty($photoUrl)): ?>
-                <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
-                     alt="<?php echo htmlspecialchars($member['full_name'] ?? 'Student Photo'); ?>">
-            <?php else: ?>
-                <div class="no-image"><i class="fas fa-user"></i></div>
-            <?php endif; ?>
-        </div>
+            <div class="photo-card">
+                <div class="photo-image">
+                    <?php if (!empty($photoUrl)): ?>
+                        <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
+                             alt="<?php echo htmlspecialchars($member['full_name'] ?? 'Student Photo'); ?>">
+                    <?php else: ?>
+                        <div class="no-image"><i class="fas fa-user"></i></div>
+                    <?php endif; ?>
+                </div>
 
-        <div class="photo-info">
-            <div class="name">
-                <?php echo htmlspecialchars($member['full_name']); ?>
+                <div class="photo-info">
+                    <div class="name">
+                        <?php echo htmlspecialchars($member['full_name'] ?? ''); ?>
+                    </div>
+
+                    <div class="matric">
+                        <i class="fas fa-graduation-cap"></i>
+                        <?php echo htmlspecialchars($member['matric_no'] ?? ''); ?>
+                    </div>
+
+                    <!-- Analysis Evaluation badging element section -->
+                    <div class="analysis-results">
+                        <div class="result-item">
+                            <span class="label">Type:</span>
+                            <?php if (isset($member['is_formal']) && $member['is_formal'] == 1): ?>
+                                <span class="badge badge-formal">Formal</span>
+                            <?php else: ?>
+                                <span class="badge badge-informal">Informal</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="result-item">
+                            <span class="label">Smile:</span>
+                            <?php if (isset($member['has_smile']) && $member['has_smile'] == 1): ?>
+                                <span class="badge badge-yes">Yes</span>
+                            <?php else: ?>
+                                <span class="badge badge-no">No</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        <button class="btn-analyze" 
+                                onclick="analyzePhoto('<?php echo htmlspecialchars($member['matric_no'] ?? ''); ?>', '<?php echo htmlspecialchars($photoUrl); ?>')">
+                            <i class="fas fa-robot"></i> Analyze Photo
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            <div class="matric">
-                <i class="fas fa-graduation-cap"></i>
-                <?php echo htmlspecialchars($member['matric_no']); ?>
-            </div>
-
-            <div style="margin-top: 10px;">
-                <button class="btn-analyze" 
-                        onclick="analyzePhoto('<?php echo htmlspecialchars($member['matric_no']); ?>', '<?php echo htmlspecialchars($photoUrl); ?>')">
-                    <i class="fas fa-robot"></i> Analyze Photo
-                </button>
-            </div>
-        </div>
-    </div>
-<?php endforeach; ?>
-
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
