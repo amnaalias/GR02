@@ -157,11 +157,32 @@ function getStudentsWithDocuments($group) {
     $stmt->execute();
     $result = $stmt->get_result();
     $students = [];
+    
     while ($row = $result->fetch_assoc()) {
         $analysis = getDocumentAnalysis($row['matric_no']);
         if ($analysis) {
             $row = array_merge($row, $analysis);
         }
+        
+        // --- START OF LANGUAGE DETECTION FROM docStu ---
+        // If language isn't set by your analyzer yet, fallback to checking the file path strings seen in image_c3a098.png
+        if (!isset($row['language']) || empty($row['language']) || $row['language'] === 'N/A') {
+            if (!empty($row['docStu'])) {
+                $filename = strtolower(basename($row['docStu']));
+                
+                if (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
+                    $row['language'] = 'English';
+                } elseif (strpos($filename, 'syair') !== false || strpos($filename, 'lagu') !== false) {
+                    $row['language'] = 'Malay';
+                } else {
+                    $row['language'] = 'N/A'; // Default fallback if no keyword matches
+                }
+            } else {
+                $row['language'] = 'N/A';
+            }
+        }
+        // --- END OF LANGUAGE DETECTION ---
+
         $students[] = $row;
     }
     $stmt->close();
