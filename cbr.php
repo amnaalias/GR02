@@ -446,7 +446,7 @@ $members = getStudentsWithPhotos($group);
             $photoPath = $member['photoStu'] ?? '';
 
             if (!empty($photoPath)) {
-                // Dynamically build target directory depending on group parameter instead of hardcoding GR02
+                // Dynamic folder structure matching your active route context
                 $photoUrl = '/2026/all/GroupMDB/' . urlencode($group) . '/' . urlencode($group) . '/' . ltrim($photoPath, '/');
             } else {
                 $photoUrl = '';
@@ -465,15 +465,15 @@ $members = getStudentsWithPhotos($group);
 
                 <div class="photo-info">
                     <div class="name">
-                        <?php echo htmlspecialchars($member['full_name'] ?? ''); ?>
+                        <?php echo htmlspecialchars($member['full_name']); ?>
                     </div>
 
                     <div class="matric">
                         <i class="fas fa-graduation-cap"></i>
-                        <?php echo htmlspecialchars($member['matric_no'] ?? ''); ?>
+                        <?php echo htmlspecialchars($member['matric_no']); ?>
                     </div>
 
-                    <!-- Analysis Evaluation badging element section -->
+                    <!-- Analysis visual indicator rendering section -->
                     <div class="analysis-results">
                         <div class="result-item">
                             <span class="label">Type:</span>
@@ -494,8 +494,9 @@ $members = getStudentsWithPhotos($group);
                     </div>
 
                     <div style="margin-top: 10px;">
+                        <!-- Fixed click event syntax configuration passing current scope reference context -->
                         <button class="btn-analyze" 
-                                onclick="analyzePhoto('<?php echo htmlspecialchars($member['matric_no'] ?? ''); ?>', '<?php echo htmlspecialchars($photoUrl); ?>')">
+                                onclick="analyzePhoto(this, '<?php echo htmlspecialchars($member['matric_no']); ?>', '<?php echo htmlspecialchars($photoUrl); ?>')">
                             <i class="fas fa-robot"></i> Analyze Photo
                         </button>
                     </div>
@@ -528,8 +529,8 @@ $members = getStudentsWithPhotos($group);
         }
     });
     
-    function analyzePhoto(matricNo, photoPath) {
-        const button = event.target.closest('.btn-analyze');
+    function analyzePhoto(buttonElement, matricNo, photoPath) {
+        const button = buttonElement.closest('.btn-analyze');
         const originalText = button.innerHTML;
         button.disabled = true;
         button.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
