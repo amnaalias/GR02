@@ -520,8 +520,13 @@ $members = getStudentsWithDocuments($group);
         }
     });
     
-    function analyzeDocument(matricNo, docPath) {
-        const button = event.target.closest('.btn-analyze');
+    <script>
+    // ... your other sidebar scripts remain the same ...
+
+    // Updated analyzeDocument function
+    function analyzeDocument(event, matricNo, docPath) {
+        // Use event.currentTarget to reliably get the button that was clicked
+        const button = event.currentTarget; 
         const originalText = button.innerHTML;
         button.disabled = true;
         button.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
@@ -551,6 +556,5 @@ $members = getStudentsWithDocuments($group);
         });
     }
 </script>
-
 </body>
 </html>
