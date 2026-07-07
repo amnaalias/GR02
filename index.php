@@ -200,7 +200,7 @@ if (empty($members)) {
 </div>
 
 <div class="action-bar">
-    <a href="../../dashboard.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-back">
+    <a href="dashboard.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-back">
         <i class="fa-solid fa-arrow-left"></i> BACK TO DASHBOARD
     </a>
     <a href="dashboard.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-stylescope">
