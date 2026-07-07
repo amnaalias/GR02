@@ -183,7 +183,7 @@ if (empty($members)) {
                 <tr>
                     <td colspan="3" class="empty-state">
                         <i class="fa-solid fa-user-slash" style="margin-right: 10px;"></i>
-                        Tiada data ahli kumpulan ditemui untuk kod group group "<?php echo htmlspecialchars($group); ?>".
+                        Tiada data ahli kumpulan ditemui untuk kod group "<?php echo htmlspecialchars($group); ?>".
                     </td>
                 </tr>
             <?php else: ?>
