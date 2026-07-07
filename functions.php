@@ -120,6 +120,7 @@ function getStudentsWithPhotos($group) {
     return $students;
 }
 
+//audio 
 function getStudentsWithAudio($group) {
     global $lecture_conn;
     
@@ -127,17 +128,23 @@ function getStudentsWithAudio($group) {
         return [];
     }
     
-    $sql = "SELECT * FROM vstu WHERE group_no = ? AND audioStu IS NOT NULL AND audioStu != '' ORDER BY full_name ASC";
+    $sql = "SELECT v.*, 
+                   aa.emotion, aa.emotion_confidence, aa.duration, 
+                   aa.language as audio_language, aa.speech_to_text, 
+                   aa.analysis_date as audio_analysis_date
+            FROM vstu v
+            LEFT JOIN audio_analysis aa ON v.matric_no = aa.matric_no
+            WHERE v.group_no = ? 
+              AND v.audioStu IS NOT NULL 
+              AND v.audioStu != ''
+            ORDER BY v.full_name ASC";
+    
     $stmt = $lecture_conn->prepare($sql);
     $stmt->bind_param("s", $group);
     $stmt->execute();
     $result = $stmt->get_result();
     $students = [];
     while ($row = $result->fetch_assoc()) {
-        $analysis = getAudioAnalysis($row['matric_no']);
-        if ($analysis) {
-            $row = array_merge($row, $analysis);
-        }
         $students[] = $row;
     }
     $stmt->close();
@@ -253,6 +260,8 @@ function getPhotoAnalysis($matric_no) {
     }
 }
 
+
+//audio
 function getAudioAnalysis($matric_no) {
     global $pdo;
     
@@ -334,6 +343,8 @@ function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $h
     }
 }
 
+
+//audio start
 function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $language, $speech_to_text) {
     global $pdo;
     
@@ -346,9 +357,34 @@ function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidenc
                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         return $stmt->execute([$matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $language, $speech_to_text]);
     } catch (PDOException $e) {
+        error_log("❌ saveAudioAnalysis error: " . $e->getMessage());
         return false;
     }
 }
+
+/**
+ * NEW: Save audio analysis - Simplified version (emotion only)
+ * audio modification
+ */
+function saveAudioAnalysisEmotionOnly($matric_no, $audio_path, $emotion, $emotion_confidence, $duration) {
+    global $pdo;
+    
+    if (!$pdo) {
+        return false;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("INSERT INTO audio_analysis 
+                               (matric_no, audio_path, emotion, emotion_confidence, duration, analysis_date) 
+                               VALUES (?, ?, ?, ?, ?, NOW())");
+        return $stmt->execute([$matric_no, $audio_path, $emotion, $emotion_confidence, $duration]);
+    } catch (PDOException $e) {
+        error_log("❌ saveAudioAnalysisEmotionOnly error: " . $e->getMessage());
+        return false;
+    }
+}
+
+//audio end 
 
 function saveDocumentAnalysis($matric_no, $document_path, $language, $word_count, $page_count, $document_type) {
     global $pdo;
