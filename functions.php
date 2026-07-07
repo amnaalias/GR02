@@ -294,19 +294,27 @@ function getAnalysisStats() {
 // ============================================
 
 function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score) {
-    global $pdo;
+    global $conn; // <--- Menggunakan sambungan local database Laragon anda (gr02)
+    if (!$conn) return false;
+
+    $sql = "INSERT INTO photo_analysis (matric_no, photo_path, is_formal, has_glasses, has_smile, face_count, quality_score, analysis_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE 
+            photo_path = ?, is_formal = ?, has_glasses = ?, has_smile = ?, face_count = ?, quality_score = ?, analysis_date = NOW()";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) return false;
+
+    // Bind parameters untuk INSERT dan UPDATE jika rekod matrik sudah wujud
+    $stmt->bind_param(
+        "ssiiiiisiiiiid", 
+        $matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score,
+        $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score
+    );
     
-    if (!$pdo) {
-        return false;
-    }
-    
-    try {
-        $stmt = $pdo->prepare("INSERT INTO photo_analysis (matric_no, photo_path, is_formal, has_glasses, has_smile, face_count, quality_score, analysis_date) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-        return $stmt->execute([$matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score]);
-    } catch (PDOException $e) {
-        return false;
-    }
+    $result = $stmt->execute();
+    $stmt->close();
+    return $result;
 }
 
 //audio start
