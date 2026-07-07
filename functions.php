@@ -8,6 +8,10 @@ $cloud_host = 'bitp3353.utem.edu.my';  // Your lecturer's server
 $cloud_user = 'GR02';
 $cloud_pass = 'abc1234';
 
+$local_host = 'localhost';
+$local_host = 'root';
+$local_host = '';
+$local_host = 'gr02';
 // ============================================
 // CONNECT TO YOUR DATABASE (gr02)
 // ============================================
@@ -15,32 +19,28 @@ $conn = null;
 $pdo = null;
 
 try {
-    // MySQLi connection
-    $conn = new mysqli($cloud_host, $cloud_user, $cloud_pass, 'gr02');
+try {
+    // MySQLi local connection
+    $conn = new mysqli($local_host, $local_user, $local_pass, $local_db);
     
     if ($conn->connect_error) {
-        // Try with different host
-        $conn = new mysqli('www.' . $cloud_host, $cloud_user, $cloud_pass, 'gr02');
-        if ($conn->connect_error) {
-            $conn = null;
-        }
-    }
-    
-    if ($conn) {
+        error_log("❌ Failed to connect to Local MySQLi: " . $conn->connect_error);
+        $conn = null;
+    } else {
         $conn->set_charset("utf8mb4");
-        error_log("✅ Connected to gr02 database");
+        error_log("✅ Connected to local gr02 database");
     }
     
-    // PDO connection
-    $pdo = new PDO("mysql:host=$cloud_host;dbname=gr02;charset=utf8mb4", $cloud_user, $cloud_pass);
+// PDO local connection
+    $pdo = new PDO("mysql:host=$local_host;dbname=$local_db;charset=utf8mb4", $local_user, $local_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    error_log("✅ PDO connected to gr02 database");
+    error_log("✅ PDO connected to local gr02 database (Laragon)");
     
 } catch (Exception $e) {
     $conn = null;
     $pdo = null;
-    error_log("❌ Failed to connect to gr02: " . $e->getMessage());
+    error_log("❌ Exception connecting to local gr02: " . $e->getMessage());
 }
 
 // ============================================
