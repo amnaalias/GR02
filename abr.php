@@ -18,7 +18,20 @@ $emotion_colors = [
     'sad' => '#6c5ce7',
     'angry' => '#ff4757',
     'neutral' => '#a4b0be',
-    'surprise' => '#ff9f4a'
+    'surprise' => '#ff9f4a',
+    'fear' => '#a29bfe',
+    'disgust' => '#fd79a8'
+];
+
+// Emotion icons
+$emotion_icons = [
+    'happy' => 'fa-face-smile',
+    'sad' => 'fa-face-frown',
+    'angry' => 'fa-face-angry',
+    'neutral' => 'fa-face-meh',
+    'surprise' => 'fa-face-surprise',
+    'fear' => 'fa-face-grimace',
+    'disgust' => 'fa-face-tired'
 ];
 ?>
 <!DOCTYPE html>
@@ -223,11 +236,18 @@ $emotion_colors = [
             border-radius: 8px;
         }
         
+        .audio-card .audio-filename {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+        
         .audio-card .audio-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         
         .audio-card .audio-details .detail-item {
@@ -260,21 +280,6 @@ $emotion_colors = [
             color: #000;
         }
         
-        .transcription {
-            margin-top: 10px;
-            padding: 10px;
-            background: #111;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: #aaa;
-            font-style: italic;
-        }
-        
-        .transcription i {
-            color: #555;
-            margin-right: 5px;
-        }
-        
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -305,6 +310,7 @@ $emotion_colors = [
             font-size: 1rem;
             transition: 0.3s;
             border: none;
+            cursor: pointer;
         }
         
         .btn-primary { background: #00d2ff; color: #000; }
@@ -314,29 +320,36 @@ $emotion_colors = [
         .btn-secondary:hover { background: #444; transform: translateX(-3px); }
         
         .btn-analyze {
-            background: #ff9f4a;
+            background: linear-gradient(135deg, #ff9f4a, #ff6b6b);
             color: #000;
             border: none;
-            padding: 6px 15px;
-            border-radius: 6px;
+            padding: 8px 20px;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.3s;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
         }
         
         .btn-analyze:hover {
-            background: #f08c33;
             transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 159, 74, 0.3);
         }
         
         .btn-analyze:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+        }
+        
+        .btn-analyze.analyzed {
+            background: #2ecc71;
         }
         
         .loading-spinner {
@@ -351,6 +364,72 @@ $emotion_colors = [
         
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+        
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px 25px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s ease;
+            max-width: 400px;
+        }
+        
+        .toast.show { display: flex; }
+        .toast.success { border-left: 4px solid #2ecc71; }
+        .toast.error { border-left: 4px solid #ff4757; }
+        .toast.info { border-left: 4px solid #00d2ff; }
+        
+        .toast i { font-size: 1.5rem; }
+        .toast .toast-content { display: flex; flex-direction: column; }
+        .toast .toast-title { font-weight: bold; font-size: 0.95rem; }
+        .toast .toast-message { color: #aaa; font-size: 0.85rem; }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Analysis result card */
+        .analysis-result {
+            margin-top: 10px;
+            padding: 12px;
+            background: linear-gradient(135deg, #1a1a1a, #111);
+            border-radius: 8px;
+            border: 1px solid #333;
+            display: none;
+        }
+        
+        .analysis-result.show { display: block; }
+        
+        .analysis-result .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #222;
+        }
+        
+        .analysis-result .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .analysis-result .result-label {
+            color: #888;
+            font-size: 0.85rem;
+        }
+        
+        .analysis-result .result-value {
+            font-weight: bold;
+            font-size: 0.95rem;
         }
         
         @media (max-width: 768px) {
@@ -402,7 +481,7 @@ $emotion_colors = [
         <h1>
             <i class="fas fa-music"></i>
             ABR DETECTION
-            <span class="group-name">- Attribute-Based Retrieval</span>
+            <span class="group-name">- Audio Emotion Analysis</span>
         </h1>
     </div>
 
@@ -419,16 +498,16 @@ $emotion_colors = [
             <div class="stat-info">
                 <div class="number">
                     <?php 
-                    $emotions = [];
+                    $analyzed = 0;
                     foreach ($members as $m) {
                         if (isset($m['emotion']) && !empty($m['emotion'])) {
-                            $emotions[] = $m['emotion'];
+                            $analyzed++;
                         }
                     }
-                    echo count(array_unique($emotions));
+                    echo $analyzed;
                     ?>
                 </div>
-                <div class="label">Emotions Detected</div>
+                <div class="label">Analyzed</div>
             </div>
         </div>
         <div class="stat-item">
@@ -447,20 +526,21 @@ $emotion_colors = [
             </div>
         </div>
         <div class="stat-item">
-            <i class="fas fa-language"></i>
+            <i class="fas fa-percent"></i>
             <div class="stat-info">
                 <div class="number">
                     <?php 
-                    $langs = [];
+                    $total = count($members);
+                    $analyzed = 0;
                     foreach ($members as $m) {
-                        if (isset($m['language']) && !empty($m['language'])) {
-                            $langs[] = $m['language'];
+                        if (isset($m['emotion']) && !empty($m['emotion'])) {
+                            $analyzed++;
                         }
                     }
-                    echo count(array_unique($langs));
+                    echo $total > 0 ? round(($analyzed / $total) * 100) . '%' : '0%';
                     ?>
                 </div>
-                <div class="label">Languages</div>
+                <div class="label">Analysis Progress</div>
             </div>
         </div>
     </div>
@@ -474,12 +554,13 @@ $emotion_colors = [
     <?php else: ?>
         <div class="audio-grid">
             <?php foreach ($members as $member): 
-                $emotion = isset($member['emotion']) ? strtolower($member['emotion']) : 'neutral';
-                $color = $emotion_colors[$emotion] ?? '#a4b0be';
+                $emotion = isset($member['emotion']) ? strtolower($member['emotion']) : null;
+                $color = $emotion ? ($emotion_colors[$emotion] ?? '#a4b0be') : '#a4b0be';
+                $has_analysis = !empty($emotion);
             ?>
-                <div class="audio-card">
+                <div class="audio-card" id="card-<?php echo $member['matric_no']; ?>">
                     <div class="audio-header">
-                        <div class="audio-icon"><i class="fas fa-music"></i></div>
+                        <div class="audio-icon"><i class="fas fa-user-circle"></i></div>
                         <div>
                             <div class="name"><?php echo htmlspecialchars($member['full_name']); ?></div>
                             <div class="matric"><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars($member['matric_no']); ?></div>
@@ -490,64 +571,59 @@ $emotion_colors = [
                         <div class="audio-player">
                             <audio controls>
                                 <source src="<?php echo htmlspecialchars($member['audioStu']); ?>">
+                                Your browser does not support the audio element.
                             </audio>
                         </div>
-                        <div style="font-size:0.8rem;color:#888;margin-top:5px;">
-                            <i class="fas fa-file-audio"></i> <?php echo basename($member['audioStu']); ?>
+                        <div class="audio-filename">
+                            <i class="fas fa-file-audio"></i> <?php echo htmlspecialchars(basename($member['audioStu'])); ?>
                         </div>
                     <?php endif; ?>
                     
-                    <div class="audio-details">
-                        <div class="detail-item">
-                            <div class="label">Emotion</div>
-                            <div class="value">
-                                <span class="badge badge-emotion" style="background: <?php echo $color; ?>; color: #000;">
-                                    <i class="fas <?php 
-                                        $emotion_icons = [
-                                            'happy' => 'fa-smile',
-                                            'sad' => 'fa-frown',
-                                            'angry' => 'fa-angry',
-                                            'neutral' => 'fa-meh',
-                                            'surprise' => 'fa-surprise'
-                                        ];
-                                        echo $emotion_icons[$emotion] ?? 'fa-meh';
-                                    ?>"></i>
-                                    <?php echo isset($member['emotion']) ? ucfirst($member['emotion']) : 'N/A'; ?>
+                    <?php if ($has_analysis): ?>
+                        <div class="analysis-result show">
+                            <div class="result-item">
+                                <span class="result-label"><i class="fas fa-face-smile"></i> Emotion</span>
+                                <span class="result-value">
+                                    <span class="badge badge-emotion" style="background: <?php echo $color; ?>; color: #000;">
+                                        <i class="fas <?php echo $emotion_icons[$emotion] ?? 'fa-face-meh'; ?>"></i>
+                                        <?php echo ucfirst($emotion); ?>
+                                    </span>
                                 </span>
                             </div>
+                            <div class="result-item">
+                                <span class="result-label"><i class="fas fa-chart-bar"></i> Confidence</span>
+                                <span class="result-value">
+                                    <?php echo isset($member['emotion_confidence']) ? number_format($member['emotion_confidence'] * 100, 0) . '%' : 'N/A'; ?>
+                                </span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label"><i class="fas fa-clock"></i> Duration</span>
+                                <span class="result-value">
+                                    <?php echo isset($member['duration']) ? number_format($member['duration'], 1) . ' seconds' : 'N/A'; ?>
+                                </span>
+                            </div>
+                            <?php if (isset($member['analysis_date'])): ?>
+                            <div class="result-item">
+                                <span class="result-label"><i class="fas fa-calendar"></i> Analyzed On</span>
+                                <span class="result-value">
+                                    <?php echo date('d/m/Y H:i', strtotime($member['analysis_date'])); ?>
+                                </span>
+                            </div>
+                            <?php endif; ?>
                         </div>
-                        <div class="detail-item">
-                            <div class="label">Confidence</div>
-                            <div class="value"><?php echo isset($member['emotion_confidence']) ? number_format($member['emotion_confidence'] * 100, 0) . '%' : 'N/A'; ?></div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="label">Duration</div>
-                            <div class="value"><i class="fas fa-clock"></i> <?php echo isset($member['duration']) ? number_format($member['duration'], 1) . 's' : 'N/A'; ?></div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="label">Language</div>
-                            <div class="value"><i class="fas fa-language"></i> <?php echo isset($member['language']) ? htmlspecialchars($member['language']) : 'N/A'; ?></div>
-                        </div>
-                    </div>
-                    
-                    <?php if (isset($member['speech_to_text']) && !empty($member['speech_to_text'])): ?>
-                        <div class="transcription">
-                            <i class="fas fa-quote-left"></i>
-                            <?php echo htmlspecialchars(substr($member['speech_to_text'], 0, 150)) . '...'; ?>
+                    <?php else: ?>
+                        <div class="analysis-result" id="result-<?php echo $member['matric_no']; ?>">
+                            <!-- Results will be displayed here after analysis -->
                         </div>
                     <?php endif; ?>
                     
-                    <?php if (isset($member['analysis_date'])): ?>
-                        <div style="margin-top:10px;font-size:0.75rem;color:#555;">
-                            <i class="far fa-clock"></i> Analyzed: <?php echo date('d/m/Y H:i', strtotime($member['analysis_date'])); ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div style="margin-top: 10px;">
-                        <button class="btn-analyze" onclick="analyzeAudio('<?php echo $member['matric_no']; ?>', '<?php echo htmlspecialchars($member['audioStu']); ?>')">
-                            <i class="fas fa-robot"></i> Analyze Audio
-                        </button>
-                    </div>
+                    <button class="btn-analyze <?php echo $has_analysis ? 'analyzed' : ''; ?>" 
+                            onclick="analyzeAudio('<?php echo $member['matric_no']; ?>', '<?php echo htmlspecialchars($member['audioStu']); ?>')"
+                            id="btn-<?php echo $member['matric_no']; ?>"
+                            <?php echo $has_analysis ? 'disabled' : ''; ?>>
+                        <i class="fas <?php echo $has_analysis ? 'fa-check-circle' : 'fa-robot'; ?>"></i>
+                        <?php echo $has_analysis ? 'Analyzed' : 'Analyze Emotion'; ?>
+                    </button>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -557,8 +633,20 @@ $emotion_colors = [
         <a href="dashboard.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
+        <button class="btn-action btn-primary" onclick="analyzeAll()">
+            <i class="fas fa-play"></i> Analyze All
+        </button>
     </div>
 </main>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">
+    <i class="fas" id="toastIcon"></i>
+    <div class="toast-content">
+        <div class="toast-title" id="toastTitle">Success</div>
+        <div class="toast-message" id="toastMessage">Operation completed</div>
+    </div>
+</div>
 
 <script>
     function toggleSidebar() {
@@ -576,13 +664,33 @@ $emotion_colors = [
         }
     });
     
+    function showToast(type, title, message) {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toastIcon');
+        const titleEl = document.getElementById('toastTitle');
+        const messageEl = document.getElementById('toastMessage');
+        
+        toast.className = 'toast show ' + type;
+        icon.className = 'fas ' + (type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle');
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 5000);
+    }
+    
     function analyzeAudio(matricNo, audioPath) {
-        const button = event.target.closest('.btn-analyze');
+        const button = document.getElementById('btn-' + matricNo);
+        const resultDiv = document.getElementById('result-' + matricNo);
+        
+        if (!button) return;
+        
         const originalText = button.innerHTML;
         button.disabled = true;
         button.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
         
-        fetch('analyze_audio.php', {
+        fetch('analyze_audio_emotion.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -592,18 +700,89 @@ $emotion_colors = [
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('✅ Analysis completed successfully!');
-                location.reload();
+                // Display results
+                const emotionColors = {
+                    'happy': '#ffd93d',
+                    'sad': '#6c5ce7',
+                    'angry': '#ff4757',
+                    'neutral': '#a4b0be',
+                    'surprise': '#ff9f4a',
+                    'fear': '#a29bfe',
+                    'disgust': '#fd79a8'
+                };
+                
+                const emotionIcons = {
+                    'happy': 'fa-face-smile',
+                    'sad': 'fa-face-frown',
+                    'angry': 'fa-face-angry',
+                    'neutral': 'fa-face-meh',
+                    'surprise': 'fa-face-surprise',
+                    'fear': 'fa-face-grimace',
+                    'disgust': 'fa-face-tired'
+                };
+                
+                const emotion = data.data.emotion.toLowerCase();
+                const color = emotionColors[emotion] || '#a4b0be';
+                const icon = emotionIcons[emotion] || 'fa-face-meh';
+                
+                resultDiv.innerHTML = `
+                    <div class="result-item">
+                        <span class="result-label"><i class="fas fa-face-smile"></i> Emotion</span>
+                        <span class="result-value">
+                            <span class="badge badge-emotion" style="background: ${color}; color: #000;">
+                                <i class="fas ${icon}"></i>
+                                ${emotion.charAt(0).toUpperCase() + emotion.slice(1)}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label"><i class="fas fa-chart-bar"></i> Confidence</span>
+                        <span class="result-value">${(data.data.emotion_confidence * 100).toFixed(0)}%</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label"><i class="fas fa-clock"></i> Duration</span>
+                        <span class="result-value">${data.data.duration.toFixed(1)} seconds</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label"><i class="fas fa-calendar"></i> Analyzed On</span>
+                        <span class="result-value">${new Date().toLocaleString()}</span>
+                    </div>
+                `;
+                resultDiv.classList.add('show');
+                
+                button.className = 'btn-analyze analyzed';
+                button.innerHTML = '<i class="fas fa-check-circle"></i> Analyzed';
+                button.disabled = true;
+                
+                showToast('success', 'Analysis Complete', 'Emotion detected: ' + emotion);
             } else {
-                alert('❌ Analysis failed: ' + data.message);
+                showToast('error', 'Analysis Failed', data.message || 'Unknown error');
             }
         })
         .catch(error => {
-            alert('❌ Error: ' + error.message);
+            showToast('error', 'Error', error.message);
         })
         .finally(() => {
-            button.disabled = false;
-            button.innerHTML = originalText;
+            if (!button.disabled) {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        });
+    }
+    
+    function analyzeAll() {
+        const buttons = document.querySelectorAll('.btn-analyze:not(.analyzed)');
+        if (buttons.length === 0) {
+            showToast('info', 'All Analyzed', 'All audio files have been analyzed already!');
+            return;
+        }
+        
+        showToast('info', 'Analyzing', 'Analyzing ' + buttons.length + ' audio files...');
+        
+        buttons.forEach((button, index) => {
+            setTimeout(() => {
+                button.click();
+            }, index * 2000);
         });
     }
 </script>
