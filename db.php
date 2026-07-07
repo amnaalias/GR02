@@ -7,7 +7,7 @@
  * Usage in any page:
  *   $db = require __DIR__ . '/db.php';
  *   $conn = new mysqli($db['host'], $db['user'], $db['pass'], $db['dbname']);
- 
+ */
 
 $isLecturerServer = stripos($_SERVER['HTTP_HOST'] ?? '', 'bitp3353.utem.edu.my') !== false;
 
@@ -25,7 +25,7 @@ return $isLecturerServer
         'dbname' => 'gr02',
       ];
 
-*/
+/*
 $host = "localhost";
 $user = "GR02";
 $password = "abc1234";
@@ -39,5 +39,5 @@ if (!$conn) {
 
 // Set charset to UTF-8
 mysqli_set_charset($conn, "utf8");
-
+*/
 ?>
