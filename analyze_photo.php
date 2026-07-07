@@ -12,7 +12,10 @@ if (empty($matric_no) || empty($photo_path)) {
 
 // Clean up the photo path before saving to the database if it contains the full server URL prefix
 if (strpos($photo_path, 'uploads/') !== false) {
-    $photo_path = 'uploads/' . explode('uploads/', $photo_path)[1];
+    
+    $photo_clean_path = 'uploads/' . explode('uploads/', $photo_path)[1];
+} else {
+    $photo_clean_path = basename($photo_path);
 }
 
 // Simulate photo analysis values
@@ -23,7 +26,7 @@ $face_count = 1;
 $quality_score = rand(75, 98); // Whole number quality percentage score
 
 // Save to your group database (gr02)
-$result = savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score);
+$result = savePhotoAnalysis($matric_no, $photo_clean_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score);
 
 if ($result) {
     echo json_encode([
