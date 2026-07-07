@@ -160,7 +160,10 @@ if (empty($members)) {
 <body>
 
 <div class="header">
-    <h1> SENARAI AHLI KUMPULAN</h1>
+    <div>
+        <h1>SENARAI AHLI KUMPULAN</h1>
+        <p style="margin: 8px 0 0; color: #c7c7c7; font-size: 1rem;">Sila semak senarai ahli kumpulan dengan teliti.</p>
+    </div>
     <div class="group-badge">
         GROUP: <?php echo htmlspecialchars($group); ?>
     </div>
@@ -180,7 +183,7 @@ if (empty($members)) {
                 <tr>
                     <td colspan="3" class="empty-state">
                         <i class="fa-solid fa-user-slash" style="margin-right: 10px;"></i>
-                        Tiada data ahli kumpulan ditemui untuk kod group "<?php echo htmlspecialchars($group); ?>".
+                        Tiada data ahli kumpulan ditemui untuk kod group group "<?php echo htmlspecialchars($group); ?>".
                     </td>
                 </tr>
             <?php else: ?>
