@@ -1,24 +1,19 @@
 <?php
 // ============================================
-// CONNECT TO CLOUD DATABASES
+// DATABASE CONFIGURATION (LOCAL ONLY)
 // ============================================
-
-// Cloud server details
-$cloud_host = 'bitp3353.utem.edu.my';  // Your lecturer's server
-$cloud_user = 'GR02';
-$cloud_pass = 'abc1234';
 
 $local_host = 'localhost';
-$local_host = 'root';
-$local_host = '';
-$local_host = 'gr02';
+$local_user = 'gr02';
+$local_pass = 'abc1234';
+$local_db   = 'gr02';
+
 // ============================================
-// CONNECT TO YOUR DATABASE (gr02)
+// CONNECT TO DATABASE
 // ============================================
 $conn = null;
 $pdo = null;
 
-try {
 try {
     // MySQLi local connection
     $conn = new mysqli($local_host, $local_user, $local_pass, $local_db);
@@ -28,62 +23,35 @@ try {
         $conn = null;
     } else {
         $conn->set_charset("utf8mb4");
-        error_log("✅ Connected to local gr02 database");
+        error_log("✅ Connected to local $local_db database via MySQLi");
     }
     
-// PDO local connection
+    // PDO local connection
     $pdo = new PDO("mysql:host=$local_host;dbname=$local_db;charset=utf8mb4", $local_user, $local_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    error_log("✅ PDO connected to local gr02 database (Laragon)");
+    error_log("✅ Connected to local $local_db database via PDO");
     
 } catch (Exception $e) {
     $conn = null;
     $pdo = null;
-    error_log("❌ Exception connecting to local gr02: " . $e->getMessage());
+    error_log("❌ Exception connecting to local database: " . $e->getMessage());
 }
 
 // ============================================
-// CONNECT TO LECTURER'S DATABASE (mmdb2026)
-// ============================================
-$lecture_conn = null;
-
-try {
-    $lecture_conn = new mysqli($cloud_host, $cloud_user, $cloud_pass, 'mmdb2026');
-    
-    if ($lecture_conn->connect_error) {
-        // Try with different host
-        $lecture_conn = new mysqli('www.' . $cloud_host, $cloud_user, $cloud_pass, 'mmdb2026');
-        if ($lecture_conn->connect_error) {
-            $lecture_conn = null;
-        }
-    }
-    
-    if ($lecture_conn) {
-        $lecture_conn->set_charset("utf8mb4");
-        error_log("✅ Connected to mmdb2026 database");
-    } else {
-        error_log("❌ Failed to connect to mmdb2026");
-    }
-} catch (Exception $e) {
-    $lecture_conn = null;
-    error_log("❌ Exception connecting to mmdb2026: " . $e->getMessage());
-}
-
-// ============================================
-// LECTURER DATABASE FUNCTIONS (READ ONLY - mmdb2026.vstu)
+// STUDENT DATA FUNCTIONS (READ FROM LOCAL mmdb2026)
 // ============================================
 
 function getStudentsFromLectureDB($group) {
-    global $lecture_conn;
+    global $conn;
     
-    if (!$lecture_conn) {
-        error_log("❌ getStudentsFromLectureDB: No connection to mmdb2026");
+    if (!$conn) {
+        error_log("❌ getStudentsFromLectureDB: No connection to database");
         return [];
     }
     
-    $sql = "SELECT * FROM vstu WHERE group_no = ? ORDER BY full_name ASC";
-    $stmt = $lecture_conn->prepare($sql);
+    $sql = "SELECT * FROM mmdb2026.vstu WHERE group_no = ? ORDER BY full_name ASC";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $group);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -96,15 +64,15 @@ function getStudentsFromLectureDB($group) {
 }
 
 function getStudentsWithPhotos($group) {
-    global $lecture_conn;
+    global $conn;
     
-    if (!$lecture_conn) {
-        error_log("❌ getStudentsWithPhotos: No connection to mmdb2026");
+    if (!$conn) {
+        error_log("❌ getStudentsWithPhotos: No connection to database");
         return [];
     }
     
-    $sql = "SELECT * FROM vstu WHERE group_no = ? AND photoStu IS NOT NULL AND photoStu != '' ORDER BY full_name ASC";
-    $stmt = $lecture_conn->prepare($sql);
+    $sql = "SELECT * FROM mmdb2026.vstu WHERE group_no = ? AND photoStu IS NOT NULL AND photoStu != '' ORDER BY full_name ASC";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $group);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -122,9 +90,9 @@ function getStudentsWithPhotos($group) {
 
 //audio 
 function getStudentsWithAudio($group) {
-    global $lecture_conn;
+    global $conn;
     
-    if (!$lecture_conn) {
+    if (!$conn) {
         return [];
     }
     
@@ -132,14 +100,14 @@ function getStudentsWithAudio($group) {
                    aa.emotion, aa.emotion_confidence, aa.duration, 
                    aa.language as audio_language, aa.speech_to_text, 
                    aa.analysis_date as audio_analysis_date
-            FROM vstu v
+            FROM mmdb2026.vstu v
             LEFT JOIN audio_analysis aa ON v.matric_no = aa.matric_no
             WHERE v.group_no = ? 
               AND v.audioStu IS NOT NULL 
               AND v.audioStu != ''
             ORDER BY v.full_name ASC";
     
-    $stmt = $lecture_conn->prepare($sql);
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $group);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -152,14 +120,14 @@ function getStudentsWithAudio($group) {
 }
 
 function getStudentsWithDocuments($group) {
-    global $lecture_conn;
+    global $conn;
     
-    if (!$lecture_conn) {
+    if (!$conn) {
         return [];
     }
     
-    $sql = "SELECT * FROM vstu WHERE group_no = ? AND docStu IS NOT NULL AND docStu != '' ORDER BY full_name ASC";
-    $stmt = $lecture_conn->prepare($sql);
+    $sql = "SELECT * FROM mmdb2026.vstu WHERE group_no = ? AND docStu IS NOT NULL AND docStu != '' ORDER BY full_name ASC";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $group);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -172,7 +140,6 @@ function getStudentsWithDocuments($group) {
         }
         
         // --- START OF LANGUAGE DETECTION FROM docStu ---
-        // If language isn't set by your analyzer yet, fallback to checking the file path strings seen in image_c3a098.png
         if (!isset($row['language']) || empty($row['language']) || $row['language'] === 'N/A') {
             if (!empty($row['docStu'])) {
                 $filename = strtolower(basename($row['docStu']));
@@ -182,7 +149,7 @@ function getStudentsWithDocuments($group) {
                 } elseif (strpos($filename, 'syair') !== false || strpos($filename, 'lagu') !== false) {
                     $row['language'] = 'Malay';
                 } else {
-                    $row['language'] = 'N/A'; // Default fallback if no keyword matches
+                    $row['language'] = 'N/A'; 
                 }
             } else {
                 $row['language'] = 'N/A';
@@ -197,7 +164,7 @@ function getStudentsWithDocuments($group) {
 }
 
 function getGroupStats($group) {
-    global $lecture_conn;
+    global $conn;
     
     $stats = [
         'total_members' => 0,
@@ -207,14 +174,14 @@ function getGroupStats($group) {
         'total_files' => 0
     ];
     
-    if (!$lecture_conn) {
-        error_log("❌ getGroupStats: No connection to mmdb2026");
+    if (!$conn) {
+        error_log("❌ getGroupStats: No connection to database");
         return $stats;
     }
     
     // Get total members
-    $sql = "SELECT COUNT(*) as total FROM vstu WHERE group_no = ?";
-    $stmt = $lecture_conn->prepare($sql);
+    $sql = "SELECT COUNT(*) as total FROM mmdb2026.vstu WHERE group_no = ?";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $group);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -224,8 +191,8 @@ function getGroupStats($group) {
     $stmt->close();
     
     // Get file counts using SELECT *
-    $sql = "SELECT * FROM vstu WHERE group_no = ?";
-    $stmt = $lecture_conn->prepare($sql);
+    $sql = "SELECT * FROM mmdb2026.vstu WHERE group_no = ?";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $group);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -241,7 +208,7 @@ function getGroupStats($group) {
 }
 
 // ============================================
-// ANALYSIS FUNCTIONS (YOUR DATABASE - gr02)
+// ANALYSIS FUNCTIONS (READ FROM LOCAL PDO)
 // ============================================
 
 function getPhotoAnalysis($matric_no) {
@@ -259,7 +226,6 @@ function getPhotoAnalysis($matric_no) {
         return null;
     }
 }
-
 
 //audio
 function getAudioAnalysis($matric_no) {
@@ -324,7 +290,7 @@ function getAnalysisStats() {
 }
 
 // ============================================
-// ANALYSIS STORAGE FUNCTIONS (WRITE TO gr02)
+// ANALYSIS STORAGE FUNCTIONS (WRITE TO LOCAL PDO)
 // ============================================
 
 function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score) {
@@ -342,7 +308,6 @@ function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $h
         return false;
     }
 }
-
 
 //audio start
 function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $language, $speech_to_text) {
@@ -363,8 +328,7 @@ function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidenc
 }
 
 /**
- * NEW: Save audio analysis - Simplified version (emotion only)
- * audio modification
+ * Save audio analysis - Simplified version (emotion only)
  */
 function saveAudioAnalysisEmotionOnly($matric_no, $audio_path, $emotion, $emotion_confidence, $duration) {
     global $pdo;
@@ -383,7 +347,6 @@ function saveAudioAnalysisEmotionOnly($matric_no, $audio_path, $emotion, $emotio
         return false;
     }
 }
-
 //audio end 
 
 function saveDocumentAnalysis($matric_no, $document_path, $language, $word_count, $page_count, $document_type) {
@@ -421,19 +384,17 @@ function extractTextFromDocx($filePath) {
 
 /**
  * Extracts plain text from a simple text-based .pdf file
- * Note: For advanced/scanned PDFs, tools like pdftotext or an OCR API are required.
  */
 function extractTextFromPdf($filePath) {
     if (!file_exists($filePath)) return '';
     $content = file_get_contents($filePath);
-    // Basic regex pattern to extract printable text strings from PDF objects
+    
     if (preg_match_all("/\((.*?)\)\s*TJ/s", $content, $matches)) {
         return implode(' ', $matches[1]);
     }
-    // Secondary basic PDF fallback parser
     if (preg_match_all("/\[\((.*?)\)\]\s*TJ/s", $content, $matches)) {
         return implode(' ', $matches[1]);
     }
-    return strip_tags($content); // Ultimate crude fallback
+    return strip_tags($content); 
 }
 ?>
