@@ -20,25 +20,11 @@ $language = 'English'; // Default fallback language
 // 1. EXTRACT PLAIN TEXT FROM THE FILE CONTENT
 if (file_exists($doc_path)) {
     if ($ext === 'docx') {
-        // Extract text from Word Document (.docx) XML structure
-        $zip = new ZipArchive();
-        if ($zip->open($doc_path) === true) {
-            if (($index = $zip->locateName('word/document.xml')) !== false) {
-                $xml_data = $zip->getFromIndex($index);
-                $file_text = strip_tags($xml_data);
-            }
-            $zip->close();
-        }
+        // Menggunakan fungsi ekstrak docx dari functions.php
+        $file_text = extractTextFromDocx($doc_path);
     } elseif ($ext === 'pdf') {
-        // Simple plain-text PDF stream parser extraction fallback
-        $pdf_content = file_get_contents($doc_path);
-        if (preg_match_all("/\((.*?)\)\s*TJ/s", $pdf_content, $matches)) {
-            $file_text = implode(' ', $matches[1]);
-        } elseif (preg_match_all("/\[\((.*?)\)\]\s*TJ/s", $pdf_content, $matches)) {
-            $file_text = implode(' ', $matches[1]);
-        } else {
-            $file_text = strip_tags($pdf_content);
-        }
+        // Menggunakan fungsi ekstrak pdf dari functions.php
+        $file_text = extractTextFromPdf($doc_path);
     } else {
         $file_text = file_get_contents($doc_path);
     }
