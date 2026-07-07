@@ -4,8 +4,8 @@
 // ============================================
 
 $local_host = 'localhost';
-$local_user = 'gr02';
-$local_pass = 'abc1234';
+$local_user = 'root';
+$local_pass = '';
 $local_db   = 'gr02';
 
 // ============================================
