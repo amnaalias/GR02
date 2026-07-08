@@ -1,6 +1,13 @@
 <?php
+// 1. PREVENT PHP ERRORS FROM BREAKING THE JSON RESPONSE
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 require_once 'functions.php';
+
+// 2. CLEAN OUT ANY ACCIDENTAL PRE-EXISTING HTML BUFFERS
+if (ob_get_length()) ob_clean();
 
 $matric_no = $_POST['matric_no'] ?? '';
 $doc_path = $_POST['doc_path'] ?? '';
@@ -15,6 +22,9 @@ $local_doc_path = $doc_path;
 if (preg_match('/uploads?\/(.+)$/i', $doc_path, $matches)) {
     $local_doc_path = 'uploads/' . $matches[1];
 }
+
+// Generate the strict, correct absolute URL to send back to the frontend (similar to photo analyzer)
+$absolute_doc_url = formatUtemUrl($local_doc_path);
 
 $filename = strtolower(basename($local_doc_path));
 $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
@@ -86,10 +96,12 @@ if ($result) {
             'language' => $language,
             'word_count' => $word_count,
             'page_count' => $page_count,
-            'document_type' => $document_type
+            'document_type' => $document_type,
+            'doc_url' => $absolute_doc_url // Added absolute URL for frontend fallback
         ]
     ]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to save analysis']);
 }
+exit; // Ensure script stops here completely
 ?>
