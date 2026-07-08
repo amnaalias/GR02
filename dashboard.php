@@ -1,33 +1,61 @@
 <?php
 session_start();
-require_once 'functions.php';
 
-// Get group parameter
-if (!isset($_GET['group'])) {
-    $group = basename(dirname(__FILE__));
-} else {
-    $group = preg_replace('/[^a-zA-Z0-9]/', '', $_GET['group']);
+// Initialize error tracking
+$error_message = null;
+
+try {
+    // Check if system functions exist before requiring
+    if (!file_exists('functions.php')) {
+        throw new Exception("Critical system file 'functions.php' is missing.");
+    }
+    require_once 'functions.php';
+
+    // Get group parameter
+    if (!isset($_GET['group'])) {
+        $group = basename(dirname(__FILE__));
+    } else {
+        $group = preg_replace('/[^a-zA-Z0-9]/', '', $_GET['group']);
+    }
+
+    // Attempt to pull stats from lecturer database
+    // Wrapping in verification checks to catch database outages or query issues
+    $group_stats = getGroupStats($group);
+    $analysis_stats = getAnalysisStats();
+
+    if ($group_stats === false || $analysis_stats === false) {
+        throw new Exception("Unable to establish connection or retrieve data from the research database.");
+    }
+
+    $total_members = $group_stats['total_members'] ?? 0;
+    $total_images = $group_stats['total_images'] ?? 0;
+    $total_pdfs = $group_stats['total_pdfs'] ?? 0;
+    $total_audios = $group_stats['total_audios'] ?? 0;
+    $total_files = $group_stats['total_files'] ?? 0;
+
+    $photo_analyzed = $analysis_stats['photo_analyzed'] ?? 0;
+    $audio_analyzed = $analysis_stats['audio_analyzed'] ?? 0;
+    $document_analyzed = $analysis_stats['document_analyzed'] ?? 0;
+    $total_analyses = $photo_analyzed + $audio_analyzed + $document_analyzed;
+
+    // Calculate percentages safely
+    $image_percent = $total_files > 0 ? round(($total_images / $total_files) * 100) : 0;
+    $pdf_percent = $total_files > 0 ? round(($total_pdfs / $total_files) * 100) : 0;
+    $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) : 0;
+
+} catch (Throwable $e) {
+    // Capture error message to present gracefully in UI
+    $error_message = $e->getMessage();
+    
+    // Fallback default assignments to prevent PHP rendering notices down the line
+    $group = $group ?? (isset($_GET['group']) ? preg_replace('/[^a-zA-Z0-9]/', '', $_GET['group']) : 'Unknown');
+    $total_members = $total_images = $total_pdfs = $total_audios = $total_files = 0;
+    $photo_analyzed = $audio_analyzed = $document_analyzed = $total_analyses = 0;
+    $image_percent = $pdf_percent = $audio_percent = 0;
+    
+    // In production, you can also log the detailed trace quietly:
+    // error_log("Dashboard Error: " . $e->getTraceAsString());
 }
-
-// Get stats from lecturer database
-$group_stats = getGroupStats($group);
-$analysis_stats = getAnalysisStats();
-
-$total_members = $group_stats['total_members'] ?? 0;
-$total_images = $group_stats['total_images'] ?? 0;
-$total_pdfs = $group_stats['total_pdfs'] ?? 0;
-$total_audios = $group_stats['total_audios'] ?? 0;
-$total_files = $group_stats['total_files'] ?? 0;
-
-$photo_analyzed = $analysis_stats['photo_analyzed'] ?? 0;
-$audio_analyzed = $analysis_stats['audio_analyzed'] ?? 0;
-$document_analyzed = $analysis_stats['document_analyzed'] ?? 0;
-$total_analyses = $photo_analyzed + $audio_analyzed + $document_analyzed;
-
-// Calculate percentages
-$image_percent = $total_files > 0 ? round(($total_images / $total_files) * 100) : 0;
-$pdf_percent = $total_files > 0 ? round(($total_pdfs / $total_files) * 100) : 0;
-$audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -152,6 +180,20 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
         
         .header h1 i { color: #00d2ff; }
         .header .group-name { color: #888; font-size: 1rem; font-weight: normal; }
+        
+        /* Error Alert UI Styling */
+        .error-container {
+            background: rgba(255, 71, 87, 0.1);
+            border-left: 4px solid #ff4757;
+            color: #ff4757;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .error-container i { font-size: 1.4rem; }
         
         .stats-grid {
             display: grid;
@@ -406,6 +448,15 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
         </h1>
     </div>
 
+    <?php if ($error_message): ?>
+        <div class="error-container">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Operational Warning:</strong> <?php echo htmlspecialchars($error_message); ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon blue"><i class="fas fa-users"></i></div>
@@ -460,7 +511,7 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
         <div class="file-type-grid">
             <div class="file-type-item" style="border-left: 4px solid #00d2ff;">
                 <div class="icon" style="color: #00d2ff;"><i class="fas fa-image"></i></div>
-                <div class="count" style="color: #00d2ff;"><?php echo htmlspecialchars($total_images); ?></div>
+                <div class="count" style="color: #00d2ff"><?php echo htmlspecialchars($total_images); ?></div>
                 <div class="label">Images</div>
                 <div class="percent"><?php echo htmlspecialchars($image_percent); ?>% of files</div>
                 <div class="stat-bar">
@@ -525,7 +576,7 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
                 <span class="badge-count"><?php echo htmlspecialchars($total_analyses); ?></span>
             </div>
             <div class="empty-state">
-                <?php if ($total_analyses > 0): ?>
+                <?php if ($total_analyses > 0 && !$error_message): ?>
                     <i class="fas fa-check-circle" style="color: #00ff88;"></i>
                     <span style="color: #aaa;">Analysis tasks are actively recorded in gr02 database.</span>
                 <?php else: ?>
