@@ -489,7 +489,7 @@ $emotion_icons = [
         <div class="stat-item">
             <i class="fas fa-music"></i>
             <div class="stat-info">
-                <div class="number"><?php echo count($members); ?></div>
+                <div class="number"><?php echo is_array($members) ? count($members) : 0; ?></div>
                 <div class="label">Total Audio Files</div>
             </div>
         </div>
@@ -499,9 +499,11 @@ $emotion_icons = [
                 <div class="number">
                     <?php 
                     $analyzed = 0;
-                    foreach ($members as $m) {
-                        if (isset($m['emotion']) && !empty($m['emotion'])) {
-                            $analyzed++;
+                    if(is_array($members)) {
+                        foreach ($members as $m) {
+                            if (isset($m['emotion']) && !empty($m['emotion'])) {
+                                $analyzed++;
+                            }
                         }
                     }
                     echo $analyzed;
@@ -516,8 +518,10 @@ $emotion_icons = [
                 <div class="number">
                     <?php 
                     $total_duration = 0;
-                    foreach ($members as $m) {
-                        $total_duration += isset($m['duration']) ? $m['duration'] : 0;
+                    if(is_array($members)) {
+                        foreach ($members as $m) {
+                            $total_duration += isset($m['duration']) ? $m['duration'] : 0;
+                        }
                     }
                     echo round($total_duration, 1);
                     ?>
@@ -530,11 +534,13 @@ $emotion_icons = [
             <div class="stat-info">
                 <div class="number">
                     <?php 
-                    $total = count($members);
+                    $total = is_array($members) ? count($members) : 0;
                     $analyzed = 0;
-                    foreach ($members as $m) {
-                        if (isset($m['emotion']) && !empty($m['emotion'])) {
-                            $analyzed++;
+                    if(is_array($members)) {
+                        foreach ($members as $m) {
+                            if (isset($m['emotion']) && !empty($m['emotion'])) {
+                                $analyzed++;
+                            }
                         }
                     }
                     echo $total > 0 ? round(($analyzed / $total) * 100) . '%' : '0%';
@@ -613,12 +619,11 @@ $emotion_icons = [
                         </div>
                     <?php else: ?>
                         <div class="analysis-result" id="result-<?php echo $member['matric_no']; ?>">
-                            <!-- Results will be displayed here after analysis -->
-                        </div>
+                            </div>
                     <?php endif; ?>
                     
                     <button class="btn-analyze <?php echo $has_analysis ? 'analyzed' : ''; ?>" 
-                            onclick="analyzeAudio('<?php echo $member['matric_no']; ?>', '<?php echo htmlspecialchars($member['audioStu']); ?>')"
+                            onclick="analyzeAudio('<?php echo $member['matric_no']; ?>', '<?php echo htmlspecialchars($member['audioStu'] ?? ''); ?>')"
                             id="btn-<?php echo $member['matric_no']; ?>"
                             <?php echo $has_analysis ? 'disabled' : ''; ?>>
                         <i class="fas <?php echo $has_analysis ? 'fa-check-circle' : 'fa-robot'; ?>"></i>
@@ -639,7 +644,6 @@ $emotion_icons = [
     </div>
 </main>
 
-<!-- Toast Notification -->
 <div class="toast" id="toast">
     <i class="fas" id="toastIcon"></i>
     <div class="toast-content">
@@ -763,7 +767,7 @@ $emotion_icons = [
             showToast('error', 'Error', error.message);
         })
         .finally(() => {
-            if (!button.disabled) {
+            if (!button.disabled && !button.classList.contains('analyzed')) {
                 button.disabled = false;
                 button.innerHTML = originalText;
             }
