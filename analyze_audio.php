@@ -1,12 +1,15 @@
 <?php
-// Ensure no error messages or notices display inline, messing up JSON strings
+// 1. Start the session in case functions.php requires authentication to access the database
+session_start();
+
+// Ensure no error messages or notices display inline
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json');
 require_once 'functions.php';
 
-// Clear out any accidental white-space characters generated prior to encoding
+// Clear out any accidental white-space characters
 if (ob_get_length()) ob_clean();
 
 $matric_no = $_POST['matric_no'] ?? '';
@@ -29,21 +32,35 @@ $emotion = $emotions[array_rand($emotions)];
 $emotion_confidence = rand(60, 95) / 100;
 $duration = rand(30, 300) / 10;
 
-// Call the function directly from functions.php (Do not redeclare it here!)
-$result = saveAudioAnalysisEmotionOnly($matric_no, $local_audio_path, $emotion, $emotion_confidence, $duration);
-
-if ($result) {
+// 2. SAFETY CHECK: Ensure the function actually exists before calling it to prevent an HTML 500 error page
+if (!function_exists('saveAudioAnalysisEmotionOnly')) {
     echo json_encode([
-        'success' => true,
-        'message' => 'Audio emotion analysis saved successfully',
-        'data' => [
-            'emotion' => $emotion,
-            'emotion_confidence' => $emotion_confidence,
-            'duration' => $duration
-        ]
+        'success' => false, 
+        'message' => 'CRITICAL ERROR: saveAudioAnalysisEmotionOnly() is missing in functions.php!'
     ]);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Failed to save analysis inside target local framework']);
+    exit;
+}
+
+// 3. Try-Catch block to catch database crashes cleanly
+try {
+    $result = saveAudioAnalysisEmotionOnly($matric_no, $local_audio_path, $emotion, $emotion_confidence, $duration);
+
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Audio emotion analysis saved successfully',
+            'data' => [
+                'emotion' => $emotion,
+                'emotion_confidence' => $emotion_confidence,
+                'duration' => $duration
+            ]
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to save analysis inside target local framework']);
+    }
+} catch (Exception $e) {
+    // If the database crashes, send the error as JSON, not HTML
+    echo json_encode(['success' => false, 'message' => 'Server Exception: ' . $e->getMessage()]);
 }
 exit;
 ?>
