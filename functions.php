@@ -364,11 +364,18 @@ function saveDocumentAnalysis($matric_no, $document_path, $language, $word_count
         return false;
     }
     
-    try {
-        $stmt = $pdo->prepare("INSERT INTO document_analysis (matric_no, document_path, language, word_count, page_count, document_type, analysis_date) 
-                               VALUES (?, ?, ?, ?, ?, ?, NOW())");
-        return $stmt->execute([$matric_no, $document_path, $language, $word_count, $page_count, $document_type]);
+  try {
+        // Diselaraskan nama lajur jadual dengan database local anda yang menggunakan 'doc_path' atau 'document_path'
+        $stmt = $pdo->prepare("INSERT INTO document_analysis (matric_no, doc_path, language, word_count, page_count, document_type, analysis_date) 
+                               VALUES (?, ?, ?, ?, ?, ?, NOW())
+                               ON DUPLICATE KEY UPDATE 
+                               doc_path = ?, language = ?, word_count = ?, page_count = ?, document_type = ?, analysis_date = NOW()");
+        return $stmt->execute([
+            $matric_no, $document_path, $language, $word_count, $page_count, $document_type,
+            $document_path, $language, $word_count, $page_count, $document_type
+        ]);
     } catch (PDOException $e) {
+        error_log("❌ saveDocumentAnalysis error: " . $e->getMessage());
         return false;
     }
 }
