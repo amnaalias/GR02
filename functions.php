@@ -314,28 +314,28 @@ function getAnalysisStats() {
 // ANALYSIS STORAGE FUNCTIONS (WRITE TO LOCAL PDO)
 // ============================================
 
+/**
+ * FIXED: Converted from MySQLi to PDO to avoid binding parameter count/type mismatch bugs.
+ */
 function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score) {
-    global $conn; 
-    if (!$conn) return false;
+    global $pdo; 
+    if (!$pdo) return false;
 
-    $sql = "INSERT INTO photo_analysis (matric_no, photo_path, is_formal, has_glasses, has_smile, face_count, quality_score, analysis_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
-            ON DUPLICATE KEY UPDATE 
-            photo_path = ?, is_formal = ?, has_glasses = ?, has_smile = ?, face_count = ?, quality_score = ?, analysis_date = NOW()";
+    try {
+        $sql = "INSERT INTO photo_analysis (matric_no, photo_path, is_formal, has_glasses, has_smile, face_count, quality_score, analysis_date) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                ON DUPLICATE KEY UPDATE 
+                photo_path = ?, is_formal = ?, has_glasses = ?, has_smile = ?, face_count = ?, quality_score = ?, analysis_date = NOW()";
 
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) return false;
-
-    // Corrected to exactly 13 characters: ssiiiiisiiiii (7 params + 6 params)
-    $stmt->bind_param(
-        "ssiiiiisiiiii", 
-        $matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score,
-        $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score
-    );
-    
-    $result = $stmt->execute();
-    $stmt->close();
-    return $result;
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([
+            $matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score,
+            $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score
+        ]);
+    } catch (PDOException $e) {
+        error_log("❌ Error saving photo analysis: " . $e->getMessage());
+        return false;
+    }
 }
 
 function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $speech_to_text) {
