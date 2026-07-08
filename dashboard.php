@@ -13,15 +13,15 @@ if (!isset($_GET['group'])) {
 $group_stats = getGroupStats($group);
 $analysis_stats = getAnalysisStats();
 
-$total_members = $group_stats['total_members'];
-$total_images = $group_stats['total_images'];
-$total_pdfs = $group_stats['total_pdfs'];
-$total_audios = $group_stats['total_audios'];
-$total_files = $group_stats['total_files'];
+$total_members = $group_stats['total_members'] ?? 0;
+$total_images = $group_stats['total_images'] ?? 0;
+$total_pdfs = $group_stats['total_pdfs'] ?? 0;
+$total_audios = $group_stats['total_audios'] ?? 0;
+$total_files = $group_stats['total_files'] ?? 0;
 
-$photo_analyzed = $analysis_stats['photo_analyzed'];
-$audio_analyzed = $analysis_stats['audio_analyzed'];
-$document_analyzed = $analysis_stats['document_analyzed'];
+$photo_analyzed = $analysis_stats['photo_analyzed'] ?? 0;
+$audio_analyzed = $analysis_stats['audio_analyzed'] ?? 0;
+$document_analyzed = $analysis_stats['document_analyzed'] ?? 0;
 $total_analyses = $photo_analyzed + $audio_analyzed + $document_analyzed;
 
 // Calculate percentages
@@ -321,6 +321,7 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
             gap: 15px;
             margin-top: 30px;
             flex-wrap: wrap;
+            幕d-direction: row;
         }
         
         .btn-action {
@@ -334,6 +335,7 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
             font-size: 1rem;
             transition: 0.3s;
             border: none;
+            cursor: pointer;
         }
         
         .btn-primary { background: #00d2ff; color: #000; }
@@ -408,42 +410,42 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
         <div class="stat-card">
             <div class="stat-icon blue"><i class="fas fa-users"></i></div>
             <div class="stat-info">
-                <div class="stat-number"><?php echo $total_members; ?></div>
+                <div class="stat-number"><?php echo htmlspecialchars($total_members); ?></div>
                 <div class="stat-label">Group Members</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon green"><i class="fas fa-camera"></i></div>
             <div class="stat-info">
-                <div class="stat-number"><?php echo $photo_analyzed; ?></div>
+                <div class="stat-number"><?php echo htmlspecialchars($photo_analyzed); ?></div>
                 <div class="stat-label">Photo Analysis Done</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon orange"><i class="fas fa-microphone"></i></div>
             <div class="stat-info">
-                <div class="stat-number"><?php echo $audio_analyzed; ?></div>
+                <div class="stat-number"><?php echo htmlspecialchars($audio_analyzed); ?></div>
                 <div class="stat-label">Audio Analysis Done</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon purple"><i class="fas fa-file-pdf"></i></div>
             <div class="stat-info">
-                <div class="stat-number"><?php echo $document_analyzed; ?></div>
+                <div class="stat-number"><?php echo htmlspecialchars($document_analyzed); ?></div>
                 <div class="stat-label">Document Analysis Done</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon red"><i class="fas fa-chart-line"></i></div>
             <div class="stat-info">
-                <div class="stat-number"><?php echo $total_analyses; ?></div>
+                <div class="stat-number"><?php echo htmlspecialchars($total_analyses); ?></div>
                 <div class="stat-label">Total Analyses</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon teal"><i class="fas fa-folder-open"></i></div>
             <div class="stat-info">
-                <div class="stat-number"><?php echo $total_files; ?></div>
+                <div class="stat-number"><?php echo htmlspecialchars($total_files); ?></div>
                 <div class="stat-label">Total Files</div>
             </div>
         </div>
@@ -453,34 +455,34 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
         <div class="card-title">
             <i class="fas fa-chart-pie"></i> 
             File Type Distribution
-            <span class="badge-count"><?php echo $total_files; ?> total</span>
+            <span class="badge-count"><?php echo htmlspecialchars($total_files); ?> total</span>
         </div>
         <div class="file-type-grid">
             <div class="file-type-item" style="border-left: 4px solid #00d2ff;">
                 <div class="icon" style="color: #00d2ff;"><i class="fas fa-image"></i></div>
-                <div class="count" style="color: #00d2ff;"><?php echo $total_images; ?></div>
+                <div class="count" style="color: #00d2ff;"><?php echo htmlspecialchars($total_images); ?></div>
                 <div class="label">Images</div>
-                <div class="percent"><?php echo $image_percent; ?>% of files</div>
+                <div class="percent"><?php echo htmlspecialchars($image_percent); ?>% of files</div>
                 <div class="stat-bar">
-                    <div class="bar-fill" style="width: <?php echo $image_percent; ?>%; background: #00d2ff;"></div>
+                    <div class="bar-fill" style="width: <?php echo htmlspecialchars($image_percent); ?>%; background: #00d2ff;"></div>
                 </div>
             </div>
             <div class="file-type-item" style="border-left: 4px solid #00ff88;">
                 <div class="icon" style="color: #00ff88;"><i class="fas fa-file-pdf"></i></div>
-                <div class="count" style="color: #00ff88;"><?php echo $total_pdfs; ?></div>
+                <div class="count" style="color: #00ff88;"><?php echo htmlspecialchars($total_pdfs); ?></div>
                 <div class="label">PDF Documents</div>
-                <div class="percent"><?php echo $pdf_percent; ?>% of files</div>
+                <div class="percent"><?php echo htmlspecialchars($pdf_percent); ?>% of files</div>
                 <div class="stat-bar">
-                    <div class="bar-fill" style="width: <?php echo $pdf_percent; ?>%; background: #00ff88;"></div>
+                    <div class="bar-fill" style="width: <?php echo htmlspecialchars($pdf_percent); ?>%; background: #00ff88;"></div>
                 </div>
             </div>
             <div class="file-type-item" style="border-left: 4px solid #ff9f4a;">
                 <div class="icon" style="color: #ff9f4a;"><i class="fas fa-music"></i></div>
-                <div class="count" style="color: #ff9f4a;"><?php echo $total_audios; ?></div>
+                <div class="count" style="color: #ff9f4a;"><?php echo htmlspecialchars($total_audios); ?></div>
                 <div class="label">Audio Files</div>
-                <div class="percent"><?php echo $audio_percent; ?>% of files</div>
+                <div class="percent"><?php echo htmlspecialchars($audio_percent); ?>% of files</div>
                 <div class="stat-bar">
-                    <div class="bar-fill" style="width: <?php echo $audio_percent; ?>%; background: #ff9f4a;"></div>
+                    <div class="bar-fill" style="width: <?php echo htmlspecialchars($audio_percent); ?>%; background: #ff9f4a;"></div>
                 </div>
             </div>
         </div>
@@ -520,11 +522,16 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
             <div class="card-title">
                 <i class="fas fa-clock"></i>
                 RECENT ACTIVITY
-                <span class="badge-count">0</span>
+                <span class="badge-count"><?php echo htmlspecialchars($total_analyses); ?></span>
             </div>
             <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                No recent activity
+                <?php if ($total_analyses > 0): ?>
+                    <i class="fas fa-check-circle" style="color: #00ff88;"></i>
+                    <span style="color: #aaa;">Analysis tasks are actively recorded in gr02 database.</span>
+                <?php else: ?>
+                    <i class="fas fa-inbox"></i>
+                    No data processed yet
+                <?php endif; ?>
             </div>
         </div>
     </div>
