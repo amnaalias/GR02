@@ -1,6 +1,13 @@
 <?php
+// Prevent PHP from dumping raw HTML errors into your JSON stream
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 require_once 'functions.php';
+
+// Clean out any accidental pre-existing buffers
+if (ob_get_length()) ob_clean();
 
 $matric_no = $_POST['matric_no'] ?? '';
 $photo_path = $_POST['photo_path'] ?? '';
@@ -10,7 +17,7 @@ if (empty($matric_no) || empty($photo_path)) {
     exit;
 }
 
-// FIXED: Securely strip out the full UTEM URL prefix if present
+// Clean up the photo path before saving to the database
 if (preg_match('/uploads?\/(.+)$/i', $photo_path, $matches)) {
     $photo_clean_path = 'uploads/' . $matches[1];
 } else {
@@ -40,6 +47,7 @@ if ($result) {
         ]
     ]);
 } else {
-    echo json_encode(['success' => false, 'message' => 'Failed to write record to gr02 database']);
+    echo json_encode(['success' => false, 'message' => 'Failed to write record to database']);
 }
+exit;
 ?>
