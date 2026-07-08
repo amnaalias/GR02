@@ -88,7 +88,9 @@ function getStudentsWithPhotos($group) {
     return $students;
 }
 
-//audio 
+/**
+ * FIXED: Removed aa.language and matched your precise table layout
+ */
 function getStudentsWithAudio($group) {
     global $conn;
     
@@ -97,9 +99,8 @@ function getStudentsWithAudio($group) {
     }
     
     $sql = "SELECT v.*, 
-                   aa.emotion, aa.emotion_confidence, aa.duration, 
-                   aa.language as audio_language, aa.speech_to_text, 
-                   aa.analysis_date as audio_analysis_date
+                   aa.emotion, aa.emotion_confidence, aa.duration, aa.sample_rate, 
+                   aa.speech_to_text, aa.analysis_date as audio_analysis_date
             FROM mmdb2026.vstu v
             LEFT JOIN audio_analysis aa ON v.matric_no = aa.matric_no
             WHERE v.group_no = ? 
@@ -227,7 +228,9 @@ function getPhotoAnalysis($matric_no) {
     }
 }
 
-//audio
+/**
+ * FIXED: Removed language from the select list to match your exact schema
+ */
 function getAudioAnalysis($matric_no) {
     global $pdo;
     
@@ -236,7 +239,7 @@ function getAudioAnalysis($matric_no) {
     }
     
     try {
-        $stmt = $pdo->prepare("SELECT emotion, emotion_confidence, duration, language, speech_to_text, analysis_date FROM audio_analysis WHERE matric_no = ? ORDER BY analysis_date DESC LIMIT 1");
+        $stmt = $pdo->prepare("SELECT emotion, emotion_confidence, duration, sample_rate, speech_to_text, analysis_date FROM audio_analysis WHERE matric_no = ? ORDER BY analysis_date DESC LIMIT 1");
         $stmt->execute([$matric_no]);
         return $stmt->fetch();
     } catch (PDOException $e) {
@@ -294,7 +297,7 @@ function getAnalysisStats() {
 // ============================================
 
 function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score) {
-    global $conn; // <--- Menggunakan sambungan local database Laragon anda (gr02)
+    global $conn; 
     if (!$conn) return false;
 
     $sql = "INSERT INTO photo_analysis (matric_no, photo_path, is_formal, has_glasses, has_smile, face_count, quality_score, analysis_date) 
@@ -305,7 +308,6 @@ function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $h
     $stmt = $conn->prepare($sql);
     if (!$stmt) return false;
 
-    // Bind parameters untuk INSERT dan UPDATE jika rekod matrik sudah wujud
     $stmt->bind_param(
         "ssiiiiisiiiiid", 
         $matric_no, $photo_path, $is_formal, $has_glasses, $has_smile, $face_count, $quality_score,
@@ -317,8 +319,10 @@ function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $h
     return $result;
 }
 
-//audio start
-function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $language, $speech_to_text) {
+/**
+ * FIXED: Removed $language variable and column tracking completely to fit your schema structure
+ */
+function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $speech_to_text) {
     global $pdo;
     
     if (!$pdo) {
@@ -326,18 +330,15 @@ function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidenc
     }
     
     try {
-        $stmt = $pdo->prepare("INSERT INTO audio_analysis (matric_no, audio_path, emotion, emotion_confidence, duration, sample_rate, language, speech_to_text, analysis_date) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-        return $stmt->execute([$matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $language, $speech_to_text]);
+        $stmt = $pdo->prepare("INSERT INTO audio_analysis (matric_no, audio_path, emotion, emotion_confidence, duration, sample_rate, speech_to_text, analysis_date) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+        return $stmt->execute([$matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $speech_to_text]);
     } catch (PDOException $e) {
         error_log("❌ saveAudioAnalysis error: " . $e->getMessage());
         return false;
     }
 }
 
-/**
- * Save audio analysis - Simplified version (emotion only)
- */
 function saveAudioAnalysisEmotionOnly($matric_no, $audio_path, $emotion, $emotion_confidence, $duration) {
     global $pdo;
     
@@ -355,7 +356,6 @@ function saveAudioAnalysisEmotionOnly($matric_no, $audio_path, $emotion, $emotio
         return false;
     }
 }
-//audio end 
 
 function saveDocumentAnalysis($matric_no, $document_path, $language, $word_count, $page_count, $document_type) {
     global $pdo;
@@ -364,8 +364,7 @@ function saveDocumentAnalysis($matric_no, $document_path, $language, $word_count
         return false;
     }
     
-  try {
-        // Diselaraskan nama lajur jadual dengan database local anda yang menggunakan 'doc_path' atau 'document_path'
+    try {
         $stmt = $pdo->prepare("INSERT INTO document_analysis (matric_no, doc_path, language, word_count, page_count, document_type, analysis_date) 
                                VALUES (?, ?, ?, ?, ?, ?, NOW())
                                ON DUPLICATE KEY UPDATE 
@@ -380,9 +379,6 @@ function saveDocumentAnalysis($matric_no, $document_path, $language, $word_count
     }
 }
 
-/**
- * Extracts plain text from a .docx file
- */
 function extractTextFromDocx($filePath) {
     if (!file_exists($filePath)) return '';
     $striped_content = '';
@@ -397,9 +393,6 @@ function extractTextFromDocx($filePath) {
     return $striped_content;
 }
 
-/**
- * Extracts plain text from a simple text-based .pdf file
- */
 function extractTextFromPdf($filePath) {
     if (!file_exists($filePath)) return '';
     $content = file_get_contents($filePath);
