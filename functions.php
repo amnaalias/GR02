@@ -39,6 +39,28 @@ try {
 }
 
 // ============================================
+// UTILITY HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Automatically formats file paths from mmdb2026 to full absolute UTEM URLs
+ */
+function formatUtemUrl($path) {
+    if (empty($path)) return '';
+    
+    // Clean up whitespace and leading slashes
+    $path = ltrim(trim($path), '/');
+    
+    // If it already starts with upload/, prepend the base link directly
+    if (stripos($path, 'upload/') === 0) {
+        return 'https://bitp3353.utem.edu.my/2026/all/' . $path;
+    }
+    
+    // Otherwise, insert upload/ into the path structure
+    return 'https://bitp3353.utem.edu.my/2026/all/upload/' . $path;
+}
+
+// ============================================
 // STUDENT DATA FUNCTIONS (READ FROM LOCAL mmdb2026)
 // ============================================
 
@@ -82,15 +104,18 @@ function getStudentsWithPhotos($group) {
         if ($analysis) {
             $row = array_merge($row, $analysis);
         }
+        
+        // FIX: Format the photo path to the full external link
+        if (!empty($row['photoStu'])) {
+            $row['photoStu'] = formatUtemUrl($row['photoStu']);
+        }
+        
         $students[] = $row;
     }
     $stmt->close();
     return $students;
 }
 
-/**
- * FIXED: Removed aa.language and matched your precise table layout
- */
 function getStudentsWithAudio($group) {
     global $conn;
     
@@ -114,6 +139,12 @@ function getStudentsWithAudio($group) {
     $result = $stmt->get_result();
     $students = [];
     while ($row = $result->fetch_assoc()) {
+        
+        // FIX: Format the audio path to the full external link
+        if (!empty($row['audioStu'])) {
+            $row['audioStu'] = formatUtemUrl($row['audioStu']);
+        }
+        
         $students[] = $row;
     }
     $stmt->close();
@@ -157,6 +188,11 @@ function getStudentsWithDocuments($group) {
             }
         }
         // --- END OF LANGUAGE DETECTION ---
+
+        // FIX: Format the document path to the full external link
+        if (!empty($row['docStu'])) {
+            $row['docStu'] = formatUtemUrl($row['docStu']);
+        }
 
         $students[] = $row;
     }
@@ -228,9 +264,6 @@ function getPhotoAnalysis($matric_no) {
     }
 }
 
-/**
- * FIXED: Removed language from the select list to match your exact schema
- */
 function getAudioAnalysis($matric_no) {
     global $pdo;
     
@@ -319,9 +352,6 @@ function savePhotoAnalysis($matric_no, $photo_path, $is_formal, $has_glasses, $h
     return $result;
 }
 
-/**
- * FIXED: Removed $language variable and column tracking completely to fit your schema structure
- */
 function saveAudioAnalysis($matric_no, $audio_path, $emotion, $emotion_confidence, $duration, $sample_rate, $speech_to_text) {
     global $pdo;
     
