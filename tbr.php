@@ -2,7 +2,7 @@
 session_start();
 require_once 'functions.php';
 
-// Get group parameter
+// Get group parameter safely
 if (!isset($_GET['group'])) {
     $group = basename(dirname(__FILE__));
 } else {
@@ -171,6 +171,9 @@ $members = getStudentsWithDocuments($group);
             border-radius: 12px;
             border: 1px solid #333;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             transition: 0.3s;
         }
         
@@ -210,6 +213,7 @@ $members = getStudentsWithDocuments($group);
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-top: 10px;
+            margin-bottom: 15px;
         }
         
         .document-card .doc-details .detail-item {
@@ -247,6 +251,7 @@ $members = getStudentsWithDocuments($group);
             text-align: center;
             padding: 60px 20px;
             color: #555;
+            grid-column: 1 / -1;
         }
         
         .empty-state i {
@@ -285,20 +290,21 @@ $members = getStudentsWithDocuments($group);
             background: #6c5ce7;
             color: #fff;
             border: none;
-            padding: 6px 15px;
+            padding: 10px 15px;
             border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
+            width: 100%;
             transition: 0.3s;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            gap: 8px;
         }
         
         .btn-analyze:hover {
             background: #5a4bd1;
-            transform: scale(1.05);
         }
         
         .btn-analyze:disabled {
@@ -391,7 +397,6 @@ $members = getStudentsWithDocuments($group);
                     foreach ($members as $m) {
                         $lang = isset($m['language']) && !empty($m['language']) ? $m['language'] : '';
                         
-                        // Fallback keywords detection
                         if (empty($lang) && !empty($m['docStu'])) {
                             $filename = strtolower(basename($m['docStu']));
                             if (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
@@ -453,66 +458,68 @@ $members = getStudentsWithDocuments($group);
         <div class="document-grid">
             <?php foreach ($members as $member): ?>
                 <div class="document-card">
-                    <div class="doc-header">
-                        <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
-                        <div>
-                            <div class="name"><?php echo htmlspecialchars($member['full_name']); ?></div>
-                            <div class="matric"><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars($member['matric_no']); ?></div>
+                    <div>
+                        <div class="doc-header">
+                            <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                            <div>
+                                <div class="name"><?php echo htmlspecialchars($member['full_name']); ?></div>
+                                <div class="matric"><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars($member['matric_no']); ?></div>
+                            </div>
                         </div>
+                        
+                        <?php if (!empty($member['docStu'])): ?>
+                            <div style="font-size:0.85rem;color:#888;margin-bottom:15px;">
+                                <i class="fas fa-file"></i> <?php echo htmlspecialchars(basename($member['docStu'])); ?>
+                                <a href="<?php echo htmlspecialchars($member['docStu']); ?>" target="_blank" style="color:#00d2ff;margin-left:10px;text-decoration:none;">
+                                    <i class="fas fa-external-link-alt"></i> View
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <div class="doc-details">
+                            <div class="detail-item">
+                                <div class="label">Language</div>
+                                <div class="value">
+                                    <?php 
+                                    $display_lang = isset($member['language']) && !empty($member['language']) ? $member['language'] : 'N/A';
+                                    
+                                    if ($display_lang === 'N/A' && !empty($member['docStu'])) {
+                                        $filename = strtolower(basename($member['docStu']));
+                                        if (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
+                                            $display_lang = 'English';
+                                        } elseif (strpos($filename, 'syair') !== false || strpos($filename, 'lagu') !== false) {
+                                            $display_lang = 'Malay';
+                                        }
+                                    }
+                                    ?>
+                                    <span class="badge badge-language">
+                                        <i class="fas fa-language"></i> <?php echo htmlspecialchars($display_lang); ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="label">Document Type</div>
+                                <div class="value"><?php echo isset($member['document_type']) ? htmlspecialchars($member['document_type']) : 'N/A'; ?></div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="label">Word Count</div>
+                                <div class="value"><?php echo isset($member['word_count']) ? number_format($member['word_count']) : 'N/A'; ?></div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="label">Pages</div>
+                                <div class="value"><?php echo isset($member['page_count']) ? htmlspecialchars($member['page_count']) : 'N/A'; ?></div>
+                            </div>
+                        </div>
+                        
+                        <?php if (isset($member['analysis_date']) && !empty($member['analysis_date'])): ?>
+                            <div style="margin-bottom:15px;font-size:0.75rem;color:#666;">
+                                <i class="far fa-clock"></i> Analyzed: <?php echo date('d/m/Y H:i', strtotime($member['analysis_date'])); ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     
-                    <?php if (!empty($member['docStu'])): ?>
-                        <div style="font-size:0.85rem;color:#888;margin-bottom:10px;">
-                            <i class="fas fa-file"></i> <?php echo basename($member['docStu']); ?>
-                            <a href="<?php echo htmlspecialchars($member['docStu']); ?>" target="_blank" style="color:#00d2ff;margin-left:10px;">
-                                <i class="fas fa-external-link-alt"></i> View
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="doc-details">
-                        <div class="label">Language</div>
-                        <div class="value">
-                            <?php 
-                            // Determine language from database or fallback to filename keywords
-                            $display_lang = isset($member['language']) && !empty($member['language']) ? $member['language'] : 'N/A';
-                            
-                            if ($display_lang === 'N/A' && !empty($member['docStu'])) {
-                                $filename = strtolower(basename($member['docStu']));
-                                if (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
-                                    $display_lang = 'English';
-                                } elseif (strpos($filename, 'syair') !== false || strpos($filename, 'lagu') !== false) {
-                                    $display_lang = 'Malay';
-                                }
-                            }
-                            ?>
-                            <span class="badge badge-language">
-                                <i class="fas fa-language"></i> <?php echo htmlspecialchars($display_lang); ?>
-                            </span>
-                        </div>
-                    </div>
-                        <div class="detail-item">
-                            <div class="label">Document Type</div>
-                            <div class="value"><?php echo isset($member['document_type']) ? htmlspecialchars($member['document_type']) : 'N/A'; ?></div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="label">Word Count</div>
-                            <div class="value"><?php echo isset($member['word_count']) ? number_format($member['word_count']) : 'N/A'; ?></div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="label">Pages</div>
-                            <div class="value"><?php echo isset($member['page_count']) ? $member['page_count'] : 'N/A'; ?></div>
-                        </div>
-                    </div>
-                    
-                    <?php if (isset($member['analysis_date'])): ?>
-                        <div style="margin-top:10px;font-size:0.75rem;color:#555;">
-                            <i class="far fa-clock"></i> Analyzed: <?php echo date('d/m/Y H:i', strtotime($member['analysis_date'])); ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div style="margin-top: 10px;">
-                        <button class="btn-analyze" onclick="analyzeDocument(event, '<?php echo $member['matric_no']; ?>', '<?php echo htmlspecialchars($member['docStu']); ?>')">
+                    <div>
+                        <button class="btn-analyze" onclick="analyzeDocument(event, '<?php echo htmlspecialchars($member['matric_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['docStu'] ?? '', ENT_QUOTES); ?>')">
                             <i class="fas fa-robot"></i> Analyze Document
                         </button>
                     </div>
@@ -544,9 +551,7 @@ $members = getStudentsWithDocuments($group);
         }
     });
     
-    
     function analyzeDocument(event, matricNo, docPath) {
-        // Use event.currentTarget to reliably get the button that was clicked
         const button = event.currentTarget; 
         const originalText = button.innerHTML;
         button.disabled = true;
