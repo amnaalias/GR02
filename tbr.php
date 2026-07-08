@@ -391,7 +391,7 @@ $members = getStudentsWithDocuments($group);
                     foreach ($members as $m) {
                         $lang = isset($m['language']) && !empty($m['language']) ? $m['language'] : '';
                         
-                        // Fallback keywords detection matching image_c3a098.png
+                        // Fallback keywords detection
                         if (empty($lang) && !empty($m['docStu'])) {
                             $filename = strtolower(basename($m['docStu']));
                             if (strpos($filename, 'poem') !== false || strpos($filename, 'lab') !== false) {
@@ -512,7 +512,7 @@ $members = getStudentsWithDocuments($group);
                     <?php endif; ?>
                     
                     <div style="margin-top: 10px;">
-                        <button class="btn-analyze" onclick="analyzeDocument('<?php echo $member['matric_no']; ?>', '<?php echo htmlspecialchars($member['docStu']); ?>')">
+                        <button class="btn-analyze" onclick="analyzeDocument(event, '<?php echo $member['matric_no']; ?>', '<?php echo htmlspecialchars($member['docStu']); ?>')">
                             <i class="fas fa-robot"></i> Analyze Document
                         </button>
                     </div>
