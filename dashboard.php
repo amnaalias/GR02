@@ -321,7 +321,7 @@ $audio_percent = $total_files > 0 ? round(($total_audios / $total_files) * 100) 
             gap: 15px;
             margin-top: 30px;
             flex-wrap: wrap;
-            幕d-direction: row;
+            flex-direction: row;
         }
         
         .btn-action {
