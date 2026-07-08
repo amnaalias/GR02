@@ -43,7 +43,7 @@ try {
 // ============================================
 
 /**
- * Automatically formats file paths from mmdb2026 to full absolute UTEM URLs
+ * FIXED: Detects 'upload' or 'uploads' properly to prevent double folder generation
  */
 function formatUtemUrl($path) {
     if (empty($path)) return '';
@@ -51,13 +51,13 @@ function formatUtemUrl($path) {
     // Clean up whitespace and leading slashes
     $path = ltrim(trim($path), '/');
     
-    // If it already starts with upload/, prepend the base link directly
-    if (stripos($path, 'upload/') === 0) {
+    // If it already starts with upload or uploads, append directly to base link
+    if (stripos($path, 'upload') === 0) {
         return 'https://bitp3353.utem.edu.my/2026/all/' . $path;
     }
     
-    // Otherwise, insert upload/ into the path structure
-    return 'https://bitp3353.utem.edu.my/2026/all/upload/' . $path;
+    // Default fallback if no upload directory is specified in the string
+    return 'https://bitp3353.utem.edu.my/2026/all/uploads/' . $path;
 }
 
 // ============================================
@@ -105,7 +105,6 @@ function getStudentsWithPhotos($group) {
             $row = array_merge($row, $analysis);
         }
         
-        // FIX: Format the photo path to the full external link
         if (!empty($row['photoStu'])) {
             $row['photoStu'] = formatUtemUrl($row['photoStu']);
         }
@@ -140,7 +139,6 @@ function getStudentsWithAudio($group) {
     $students = [];
     while ($row = $result->fetch_assoc()) {
         
-        // FIX: Format the audio path to the full external link
         if (!empty($row['audioStu'])) {
             $row['audioStu'] = formatUtemUrl($row['audioStu']);
         }
@@ -189,7 +187,6 @@ function getStudentsWithDocuments($group) {
         }
         // --- END OF LANGUAGE DETECTION ---
 
-        // FIX: Format the document path to the full external link
         if (!empty($row['docStu'])) {
             $row['docStu'] = formatUtemUrl($row['docStu']);
         }
