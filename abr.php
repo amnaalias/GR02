@@ -694,7 +694,7 @@ $emotion_icons = [
         button.disabled = true;
         button.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
         
-        fetch('analyze_audio_emotion.php', {
+        fetch('analyze_audio.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
