@@ -8,54 +8,30 @@ if (!isset($_GET['group'])) {
     $group = preg_replace('/[^a-zA-Z0-9]/', '', $_GET['group']);
 }
 
-// 2. Panggil db.php - Use the same method as other files
-$db_paths = [
-    'db.php',
-    '../db.php',
-    '../../db.php',
-    '../../All/db.php',
-    '../All/db.php',
-];
+// 2. KONEKSI DATABASE (Menggunakan Kredensial GR02 dari functions.php)
+$host = 'localhost';
+$username = 'GR02';
+$password = 'abc1234';
+$database = 'gr02';
 
-$db_found = false;
 $conn = null;
-
-foreach ($db_paths as $path) {
-    if (file_exists($path)) {
-        include $path;
-        $db_found = true;
-        break;
-    }
-}
-
-// If db.php not found or connection failed, try direct connection
-if (!$db_found || !isset($conn) || $conn->connect_error) {
-    try {
-        $host = 'localhost';
-        $username = 'root';
-        $password = '';
-        $database = 'gr02';
-        
-        $conn = new mysqli($host, $username, $password, $database);
-        
-        if ($conn->connect_error) {
-            $conn = new mysqli($host, $username, $password);
-            if (!$conn->connect_error) {
-                $conn->query("CREATE DATABASE IF NOT EXISTS gr02");
-                $conn->select_db('gr02');
-            }
-        }
-        $conn->set_charset("utf8mb4");
-    } catch (Exception $e) {
+try {
+    $conn = new mysqli($host, $username, $password, $database);
+    if ($conn->connect_error) {
+        error_log("❌ Connection failed: " . $conn->connect_error);
         $conn = null;
+    } else {
+        $conn->set_charset("utf8mb4");
     }
+} catch (Exception $e) {
+    error_log("❌ Database connection exception: " . $e->getMessage());
+    $conn = null;
 }
 
-// 3. Get student data from database
+// 3. AMBIL DATA AHLI DARI mmdb2026.vstu
 $members = [];
-if ($conn && !$conn->connect_error) {
-    // First try to get from student table (like other files do)
-    $sql = "SELECT full_name, matric_no, group_no FROM student WHERE group_no = ? ORDER BY full_name ASC";
+if ($conn) {
+    $sql = "SELECT full_name, matric_no, group_no FROM mmdb2026.vstu WHERE group_no = ? ORDER BY full_name ASC";
     
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param("s", $group);
@@ -68,31 +44,6 @@ if ($conn && !$conn->connect_error) {
         $stmt->close();
     }
     $conn->close();
-}
-
-// If no students found, try alternative query
-if (empty($members)) {
-    try {
-        // Try to get from mmdb2026.vstu as fallback
-        $conn_mmdb = new mysqli('localhost', 'root', '', 'mmdb2026');
-        if (!$conn_mmdb->connect_error) {
-            $sql_vstu = "SELECT full_name, matric_no, group_no FROM vstu WHERE group_no = ? ORDER BY full_name ASC";
-            
-            if ($stmt = $conn_mmdb->prepare($sql_vstu)) {
-                $stmt->bind_param("s", $group);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                
-                while ($row = $result->fetch_assoc()) {
-                    $members[] = $row;
-                }
-                $stmt->close();
-            }
-            $conn_mmdb->close();
-        }
-    } catch (Exception $e) {
-        // Fallback - continue with empty members
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -182,7 +133,6 @@ if (empty($members)) {
             <?php if (empty($members)): ?>
                 <tr>
                     <td colspan="3" class="empty-state">
-                        <i class="fa-solid fa-user-slash" style="margin-right: 10px;"></i>
                         Tiada data ahli kumpulan ditemui untuk kod group "<?php echo htmlspecialchars($group); ?>".
                     </td>
                 </tr>
@@ -201,13 +151,12 @@ if (empty($members)) {
 
 <div class="action-bar">
     <a href="dashboard.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-back">
-        <i class="fa-solid fa-arrow-left"></i> BACK TO DASHBOARD
+        BACK TO DASHBOARD
     </a>
     <a href="dashboard.php?group=<?php echo urlencode($group); ?>" class="btn-action btn-stylescope">
-        <i class="fa-solid fa-right-to-bracket"></i> ENTER STYLESCOPE
+        ENTER STYLESCOPE
     </a>
 </div>
-
 
 </body>
 </html>
