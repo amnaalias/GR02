@@ -443,13 +443,21 @@ $members = getStudentsWithPhotos($group);
         <div class="photo-grid">
             <?php foreach ($members as $member): ?>
             <?php
-            $photoPath = $member['photoStu'] ?? '';
+            $photoPath = trim($member['photoStu'] ?? '');
+            $matricNo = strtolower(trim($member['matric_no'] ?? ''));
+            $photoUrl = '';
 
             if (!empty($photoPath)) {
-                // Dynamic folder structure matching your active route context
-                $photoUrl = '/2026/all/GroupMDB/' . urlencode($group) . '/' . urlencode($group) . '/' . ltrim($photoPath, '/');
-            } else {
-                $photoUrl = '';
+                if (strpos($photoPath, 'http') === 0) {
+                    // Already an absolute URL
+                    $photoUrl = $photoPath;
+                } elseif (preg_match('/uploads\//i', $photoPath)) {
+                    // Has 'uploads/' in it -> convert to full server path
+                    $photoUrl = 'https://bitp3353.utem.edu.my/2026/all/' . ltrim($photoPath, '/');
+                } else {
+                    // Just the file name format -> build it with matric folder dynamically
+                    $photoUrl = 'https://bitp3353.utem.edu.my/2026/all/uploads/' . $matricNo . '/' . ltrim($photoPath, '/');
+                }
             }
             ?>
 
@@ -457,7 +465,9 @@ $members = getStudentsWithPhotos($group);
                 <div class="photo-image">
                     <?php if (!empty($photoUrl)): ?>
                         <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
-                             alt="<?php echo htmlspecialchars($member['full_name'] ?? 'Student Photo'); ?>">
+                             alt="<?php echo htmlspecialchars($member['full_name'] ?? 'Student Photo'); ?>"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="no-image" style="display:none;"><i class="fas fa-exclamation-triangle"></i></div>
                     <?php else: ?>
                         <div class="no-image"><i class="fas fa-user"></i></div>
                     <?php endif; ?>
@@ -473,7 +483,6 @@ $members = getStudentsWithPhotos($group);
                         <?php echo htmlspecialchars($member['matric_no']); ?>
                     </div>
 
-                    <!-- Analysis visual indicator rendering section -->
                     <div class="analysis-results">
                         <div class="result-item">
                             <span class="label">Type:</span>
@@ -494,7 +503,6 @@ $members = getStudentsWithPhotos($group);
                     </div>
 
                     <div style="margin-top: 10px;">
-                        <!-- Fixed click event syntax configuration passing current scope reference context -->
                         <button class="btn-analyze" 
                                 onclick="analyzePhoto(this, '<?php echo htmlspecialchars($member['matric_no']); ?>', '<?php echo htmlspecialchars($photoUrl); ?>')">
                             <i class="fas fa-robot"></i> Analyze Photo
